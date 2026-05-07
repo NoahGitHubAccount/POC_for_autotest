@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# 設定檔（含真實帳密）
+config/config.local.yaml
+
+# 登入態（含 cookies/storageState）
+.auth/
+!.auth/.keep
+
+# 測試報告與附件（POC 階段先不進 git；穩定後再決定）
+reports/
+!reports/.keep
+
+# Playwright
+playwright-report/
+test-results/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 前端原始碼（僅作 read-only 參考，不該 vendored）
+src/
+!src/.keep
+
+# 暫存檔
+.tmp_*
+
+# Debug 產出物
+debug_filter.png
+debug_*.png
+
+# 第三方業務文件（PDF；公開 repo 不帶，本機保留）
+高雄數位市民活動模組需求.pdf
+*.pdf
+
+# 個人進度狀態（Golden 個人筆記，不入團隊共享）
+# 若改為團隊共享：移除此行並 git add -f STATUS.md
+STATUS.md
+

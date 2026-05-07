@@ -1,0 +1,39 @@
+# 複製此檔成 config.local.yaml 後填入真實值。
+# config.local.yaml 已在 .gitignore，不會被提交。
+
+base_url: https://dev-maas.foxconn.com
+entry_path: /entry/login
+
+# 登入後預期會跳轉到的頁面 URL（用於判定登入成功）
+# Playwright glob：** 匹配任意（含 /），* 匹配除 / 外任意
+post_login_url_glob: "**/entry/evevent**"
+
+accounts:
+  admin:
+    username: REPLACE_ME
+    password: REPLACE_ME
+
+captcha:
+  # manual : 跳出 Playwright Inspector 等人工輸入後 Resume
+  # bypass : 直接帶入 test_code（需後端支援）
+  # reuse  : 不輸入，僅靠 storageState 重用 session（過期會失敗）
+  mode: manual
+  # 若 mode=bypass，這裡填測試環境的固定通關碼
+  test_code: ""
+  # storageState 視為新鮮的最大時長（分鐘）
+  session_max_age_min: 30
+
+browser:
+  headed: true
+  slow_mo_ms: 0
+  viewport:
+    width: 1440
+    height: 900
+
+artifacts:
+  # on | off | on-failure
+  screenshot: on-failure
+  # on | off | on-failure
+  trace: on
+  # 不錄影（預設關）
+  video: off
