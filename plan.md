@@ -6,7 +6,7 @@
 
 ## 目標
 
-為高雄數位市民活動模組（dev-maas.foxconn.com）建構一套以 WBS 工項為驅動單位、可夜間排程、輸出 Markdown 報告的黑箱自動化測試 POC，驗證後續可推廣到其他類似活動站。
+為某活動報名管理系統建構一套以 WBS 工項為驅動單位、可夜間排程、輸出 Markdown 報告的黑箱自動化測試 POC，驗證後續可推廣到其他類似 web 系統。
 
 ## 驗收條件
 
@@ -20,7 +20,7 @@
 - [x] **P5.5 報告交付能力**：`--shot=failed_only|always|off` + `tools/md_to_docx.py` 整併版 docx
 - [ ] **P5.7 夜間排程**（從 P5 拆出）：Windows 工作排程器啟動 nightly run；待 P4.5 全部跑完才接
 - [ ] **P6 前端 meta 同步**：自動抽 `data-testid` / route / i18n 表（待前端配合加 testid）
-- [ ] **P7 工程化沉澱**：`prompts/` 完整化（✅ 00/10/20/30/40/99 全到位 2026-05-08）、`docs/技術架構.md` ✅、`notes/` 第一份素材 ✅；待：push 到 NoahGitHubAccount
+- [x] **P7 工程化沉澱**：`prompts/` 完整化（00/10/20/30/40/99）、`docs/技術架構.md`、`notes/` 第一份素材、push 到 GitHub 全部 ✅ 2026-05-08
 
 ---
 
@@ -59,7 +59,7 @@ P6 高度依賴前端工程師加 `data-testid`，目前無時程承諾。
 - ✅ **prompts/ 完整化**：00 專案發起 / 10 PDF 轉規格 / **20 生成測試案例**（新）/ **30 審查與修訂**（新）/ **40 執行測試與排錯**（新）/ 99 重點經驗
 - ✅ **docs/技術架構.md**：含目錄樹、模組分層 mermaid、週循環資料流 mermaid、跨專案重用 checklist
 - ✅ **notes/ 第一份素材**：`20260508-poc-2-2-2-收斂.md`，可餵 `make-pptx` skill 產簡報
-- ⏳ **push 到 NoahGitHubAccount**：待初版穩定後執行（人類動作）
+- ✅ **push 到 GitHub**：2026-05-08 完成（main 分支，commit `0c43894`）
 
 ---
 
@@ -78,7 +78,7 @@ P6 高度依賴前端工程師加 `data-testid`，目前無時程承諾。
 | 編號 | 問題 | 決議 | 理由 | Revisit 觸發 |
 |---|---|---|---|---|
 | Q1 | STATUS.md 是否進 git？ | ❌ 不進，已 `.gitignore` | 個人狀態錨點；團隊共享走 `WBS.md` + `reports/` | 第二位協作者加入 / PR review 帶進度 |
-| Q2 | 後端 CAPTCHA bypass 是否支援？ | ✅ 走 warm-login，bypass 不在 POC 範圍 | dev-maas 後端由其他團隊管，本團隊無協調權；warm-login 已驗證 | 後端團隊主動配合改動（config 已留 `captcha.mode` 開關） |
+| Q2 | 後端 CAPTCHA bypass 是否支援？ | ✅ 走 warm-login，bypass 不在 POC 範圍 | 受測站後端由其他團隊管，本團隊無協調權；warm-login 已驗證 | 後端團隊主動配合改動（config 已留 `captcha.mode` 開關） |
 | Q3 | 是否需要 CI 整合？ | ❌ POC 階段不上 CI | 範圍小、單一 admin、單機 Windows；ROI 不正 | POC 通過推廣到 ≥ 2 站 / 出現第二位執行者 |
 
 ## 變更紀錄

@@ -1,6 +1,6 @@
 # POC_for_autotest
 
-> 黑箱自動化測試 POC for 高雄數位市民活動模組（dev-maas.foxconn.com）
+> 黑箱自動化測試 POC for 某活動報名管理系統（具體 host 在 `config/config.local.yaml`）
 
 ## 技術棧
 - **測試**：Python 3.x + Playwright + pytest
@@ -31,7 +31,7 @@
 | **當前進度錨點** | `STATUS.md` ← session 開場先讀這份 |
 | 任務階段化計畫 | `plan.md` |
 | 工項階層（驅動索引） | `WBS.md` |
-| 規格來源 | `specs/`、`高雄數位市民活動模組需求.pdf` |
+| 規格來源 | `specs/`、需求 PDF（本機保留，不入 git） |
 | **Agent 經驗檔（learnings）** | `prompts/99_重點經驗.md` ← 等同 `learnings.md` |
 | 每週協作流程 SOP | `prompts/README.md` |
 | 提示詞庫 | `prompts/00_…`、`prompts/10_…`（編號 00–99） |

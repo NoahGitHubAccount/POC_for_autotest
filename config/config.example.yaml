@@ -1,7 +1,7 @@
 # 複製此檔成 config.local.yaml 後填入真實值。
 # config.local.yaml 已在 .gitignore，不會被提交。
 
-base_url: https://dev-maas.foxconn.com
+base_url: https://<受測站 host>   # 例：https://test.example.com
 entry_path: /entry/login
 
 # 登入後預期會跳轉到的頁面 URL（用於判定登入成功）

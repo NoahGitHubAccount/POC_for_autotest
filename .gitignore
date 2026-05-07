@@ -41,7 +41,6 @@ debug_filter.png
 debug_*.png
 
 # 第三方業務文件（PDF；公開 repo 不帶，本機保留）
-高雄數位市民活動模組需求.pdf
 *.pdf
 
 # 個人進度狀態（Golden 個人筆記，不入團隊共享）

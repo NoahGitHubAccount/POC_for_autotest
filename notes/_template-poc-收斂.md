@@ -13,7 +13,7 @@ audience: 內部技術分享
 
 ## 1. 專案簡介
 
-- 受測系統：高雄數位市民活動模組 dev-maas.foxconn.com
+- 受測系統：某活動報名管理系統（具體 host 在本機 `config/config.local.yaml`）
 - 技術棧：Python + Playwright + pytest（黑箱）
 - 範圍：WBS 工項 2-2-2 搜尋功能（A/B/C/D 中 B/C/D 完成、A 因權限工項排除）
 - 期程：{{YYYY-MM-DD}} ～ {{YYYY-MM-DD}}

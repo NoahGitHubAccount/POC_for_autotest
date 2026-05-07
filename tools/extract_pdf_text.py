@@ -7,7 +7,8 @@
     python tools/extract_pdf_text.py --pages 17 --out spec.txt # 輸出到檔案
     python tools/extract_pdf_text.py --pdf 自訂.pdf --pages 1-3
 
-預設 PDF 為專案根目錄下的「高雄數位市民活動模組需求.pdf」。
+預設 PDF 為專案根目錄下的「需求規格.pdf」（user 本機自行命名 / rename 對應）。
+若你的 PDF 檔名不同，請傳 --pdf 指定。
 """
 from __future__ import annotations
 import argparse
@@ -17,7 +18,7 @@ from pathlib import Path
 import pdfplumber
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_PDF = PROJECT_ROOT / "高雄數位市民活動模組需求.pdf"
+DEFAULT_PDF = PROJECT_ROOT / "需求規格.pdf"
 
 
 def parse_pages(spec: str) -> list[int]:
