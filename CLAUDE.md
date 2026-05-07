@@ -30,13 +30,14 @@
 |---|---|
 | **當前進度錨點** | `STATUS.md` ← session 開場先讀這份 |
 | 任務階段化計畫 | `plan.md` |
-| 工項階層（驅動索引） | `WBS.md` |
-| 規格來源 | `specs/`、需求 PDF（本機保留，不入 git） |
+| 工項階層（驅動索引） | `input/WBS.md` |
+| 規格來源 | `specs/`（AI 產出）、`input/需求規格.pdf`（人類放置，不入 git） |
 | **Agent 經驗檔（learnings）** | `prompts/99_重點經驗.md` ← 等同 `learnings.md` |
-| 每週協作流程 SOP | `prompts/README.md` |
-| 提示詞庫 | `prompts/00_…`、`prompts/10_…`（編號 00–99） |
-| 人類向延伸文件 | `docs/`（永久性參考；目前 stub） |
-| 簡報素材庫 | `notes/`（餵 `make-pptx` skill；目前 stub） |
+| 每週協作 SOP（人類視角） | `docs/使用手冊.md` Part A |
+| AI 動工提示詞 | `prompts/README.md` + `prompts/00_…40_…` |
+| 系統技術架構 | `docs/技術架構.md` |
+| CLI 速查 | `docs/使用手冊.md` Part B |
+| 簡報素材庫 + 流程圖規則 | `notes/` |
 | 測試與規格 | `tests/`、`specs/`（依工項分目錄） |
 | 報告 | `reports/<run_id>/`（每次執行一目錄） |
 | Hook 範本（未啟用） | `.claude/hooks/README.md` |

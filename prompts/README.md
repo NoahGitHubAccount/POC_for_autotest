@@ -2,7 +2,7 @@
 
 本資料夾儲存可跨專案重放的**提示詞檔案**與重點經驗，目的是把「規格轉化 → 案例展開 → 執行回報」這條 AI 協作流程沉澱為**可被複製的工程方法**。
 
-> 與 `docs/合作SOP_QA.md` 分工：本檔是「AI 動工時用哪些提示詞」；`docs/合作SOP_QA.md` 是「Golden 跟 AI 的人機互動 SOP」。
+> 與 `docs/使用手冊.md` Part A 分工：本檔是「AI 動工時用哪些提示詞」；使用手冊 Part A 是「人類跟 AI 的互動 SOP」。
 
 ## 使用順序（每週一次）
 
@@ -33,6 +33,8 @@
 
 ## 典範轉移到別的專案
 
-1. 整個資料夾連同 `tests/`、`specs/`、`lib/`、`tools/` 一起複製
-2. 替換 `WBS.md`、需求 PDF、`config/`
+1. 整個資料夾連同 `tests/`、`specs/`、`lib/`、`tools/`、`docs/` 一起複製
+2. 替換 `input/WBS.md`、`input/需求規格.pdf`、`config/config.local.yaml`
 3. 從 `00_專案發起_提示詞.md` 開始走流程
+
+完整跨專案 checklist 見 `docs/技術架構.md` §7。

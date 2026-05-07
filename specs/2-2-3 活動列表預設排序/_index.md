@@ -20,7 +20,7 @@
 
 ## 規格原文（PDF）
 <!-- AI-MANAGED START: spec-original -->
-（待補：請貼 PDF 對應頁原文。WBS.md 第 58 行只列標題無內文。）
+（待補：請貼 PDF 對應頁原文。input/WBS.md 第 58 行只列標題無內文。）
 <!-- AI-MANAGED END: spec-original -->
 
 ## 使用者註記

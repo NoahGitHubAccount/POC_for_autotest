@@ -1,8 +1,8 @@
 # POC_for_autotest
 
 > **一句話定位**：用 AI 協作把「PDF 規格」自動轉成「pytest 測試 + Word 報告」的工程化骨架。
-> **受測對象**：某活動報名管理系統（具體 host 在本機 `config/config.local.yaml`，不入 git）。
 > **適用方法**：可複製到任何「有 PDF/Word 規格 + Web UI」的專案。
+> **受測對象**：某活動報名管理系統（具體 host 在本機 `config/config.local.yaml`，不入 git）。
 
 ---
 
@@ -56,7 +56,7 @@ QA 為新功能寫一份完整測試 + 報告，傳統流程要：
 - 規格只在會議白板上、沒落地成文件
 - 想完全靠 AI 不想 review（會踩坑、修起來更累）
 - 已經有完整 CI / 測試框架的成熟團隊（這是 POC，不是替代方案）
-- 受測網站完全沒有 i18n / 沒有穩定的語意 selector（PrimeVue 動態 ID、無 data-testid）— 還是可以做，但 selector 維護成本高
+- 受測網站完全沒有穩定的語意 selector（PrimeVue 動態 ID、無 data-testid）— 還是可以做，但 selector 維護成本高
 
 ---
 
@@ -88,24 +88,27 @@ playwright install chromium
 
 # 2. 建立本機設定（含帳密；不會被 git 追蹤）
 copy config\config.example.yaml config\config.local.yaml
-# 用編輯器填入 username / password 等
+# 用編輯器填入 base_url、username、password 等
 
-# 3. 第一次登入產 storage_state（手動操作瀏覽器）
+# 3. 把需求 PDF 放到 input/（命名 需求規格.pdf 或自訂後傳 --pdf）
+copy <你的需求 PDF> input\需求規格.pdf
+
+# 4. 第一次登入產 storage_state（手動操作瀏覽器）
 python tools\warm_login.py
 
-# 4. 冒煙測試（驗證登入態與報告器）
+# 5. 冒煙測試（驗證登入態與報告器）
 python tools\run.py --smoke
 
-# 5. 跑指定工項（試點：2-2-2-B 主辦/活動日期/活動名稱篩選）
+# 6. 跑指定工項（試點：2-2-2-B）
 pytest "tests/2-2-2 搜尋功能/" -v
 
-# 6. 產 Word 報告（最終交付）
+# 7. 產 Word 報告（最終交付）
 pytest "tests/2-2-2 搜尋功能/" -v --shot=always
 python tools\md_to_docx.py
 # docx 在 reports/<rid>_run/docx/
 ```
 
-更多 CLI 用法見 [`docs/工具指令集.md`](docs/工具指令集.md)。
+更多 CLI 用法、SOP 細節見 [`docs/使用手冊.md`](docs/使用手冊.md)。
 
 ---
 
@@ -114,11 +117,13 @@ python tools\md_to_docx.py
 完整 mermaid 圖在 [`docs/技術架構.md`](docs/技術架構.md)，這裡是文字版簡化：
 
 ```
-┌──────────┐
-│ PDF 規格  │
-└────┬─────┘
-     │ AI（prompts/10）
-     ▼
+┌──────────────────────┐
+│ input/                │
+│  ├─ WBS.md           │  ← 人類填工項階層
+│  └─ 需求規格.pdf      │  ← 人類放需求 PDF
+└──────────┬───────────┘
+           │ AI（prompts/10）
+           ▼
 ┌──────────────┐         ┌─────────────────┐
 │ specs/<id>.md│ ←—————— │ 人類 review     │
 └────┬─────────┘         └─────────────────┘
@@ -129,12 +134,12 @@ python tools\md_to_docx.py
 └────┬─────────────────┘
      │ pytest（人類觸發）
      ▼
-┌─────────────────────────────────────┐
-│ reports/<rid>_run/                  │
-│   ├─ <工項>.md   ← 逐工項 markdown   │
-│   ├─ _summary.md ← 本次 run 彙總    │
-│   └─ screenshots/ ← 截圖             │
-└────┬────────────────────────────────┘
+┌──────────────────────────────────────┐
+│ reports/<rid>_run/                   │
+│   ├─ <工項>.md   ← 逐工項 markdown    │
+│   ├─ _summary.md ← 本次 run 彙總     │
+│   └─ screenshots/ ← 截圖              │
+└────┬─────────────────────────────────┘
      │ tools/md_to_docx.py
      ▼
 ┌──────────────────────────────┐
@@ -152,27 +157,26 @@ python tools\md_to_docx.py
 
 | 角色 | 第 1 份 | 第 2 份 | 第 3 份 |
 |---|---|---|---|
-| **第一次接觸 / 想評估這套方法** | 本 README | [`docs/技術架構.md`](docs/技術架構.md) | [`docs/合作SOP_QA.md`](docs/合作SOP_QA.md) |
-| **要動手用（QA / 工程師）** | 本 README §4 | [`docs/工具指令集.md`](docs/工具指令集.md) | [`docs/合作SOP_QA.md`](docs/合作SOP_QA.md) |
-| **要讓 AI 幫你產 spec / test** | [`docs/合作SOP_QA.md`](docs/合作SOP_QA.md) | [`prompts/README.md`](prompts/README.md) | `prompts/00_…` ～ `40_…` |
-| **要把這套搬到別的專案** | [`docs/技術架構.md`](docs/技術架構.md) §6–§7 | [`prompts/README.md`](prompts/README.md) | [`prompts/99_重點經驗.md`](prompts/99_重點經驗.md) |
-| **接手 session（AI Agent）** | [`STATUS.md`](STATUS.md) | [`CLAUDE.md`](CLAUDE.md) | [`prompts/99_重點經驗.md`](prompts/99_重點經驗.md) |
+| **第一次接觸 / 想評估這套方法** | 本 README | [`docs/技術架構.md`](docs/技術架構.md) | [`docs/使用手冊.md`](docs/使用手冊.md) Part A |
+| **要動手用（QA / 工程師）** | 本 README §4 | [`docs/使用手冊.md`](docs/使用手冊.md) | [`input/README.md`](input/README.md) |
+| **要讓 AI 幫你產 spec / test** | [`docs/使用手冊.md`](docs/使用手冊.md) Part A | [`prompts/README.md`](prompts/README.md) | `prompts/00_…` ～ `40_…` |
+| **要把這套搬到別的專案** | [`docs/技術架構.md`](docs/技術架構.md) §6–§7 | [`input/README.md`](input/README.md) | [`prompts/99_重點經驗.md`](prompts/99_重點經驗.md) |
+| **接手 session（AI Agent）** | `STATUS.md` | [`CLAUDE.md`](CLAUDE.md) | [`prompts/99_重點經驗.md`](prompts/99_重點經驗.md) |
 
 ### 📚 完整文件清單
 
 | 文件 | 用途 |
 |---|---|
 | **`docs/技術架構.md`** | **架構圖 + 資料流 + 跨專案重用 checklist**（第一次來看這份） |
-| `docs/工具指令集.md` | CLI 速查表（產 Word / 跑 pytest / warm-login / explore_page） |
-| `docs/合作SOP_QA.md` | 人機合作 SOP（10 個 Q&A，每週工作流、跨 session 接手） |
+| **`docs/使用手冊.md`** | **每週協作 SOP（Part A）+ CLI 速查（Part B）**（動手時查這份） |
+| `input/README.md` | input/ 目錄角色說明（人類輸入素材） |
 | `STATUS.md` | 當前進度錨點（高頻變動，gitignored；個人筆記） |
-| `WBS.md` | 工項階層清單（驅動測試的索引） |
+| `input/WBS.md` | 工項階層清單（驅動測試的索引） |
 | `plan.md` | 階段化任務計畫（P0–P7） |
 | `CLAUDE.md` | Agent 行為約束 + 子文件地圖 |
 | `prompts/README.md` | 提示詞工具庫導覽（00 → 99） |
 | `prompts/99_重點經驗.md` | 踩坑紀錄（learnings；持續累加） |
-| `初始提示詞.md` | 啟動本專案最初的需求描述（人類 → AI） |
-| `流程圖生成規則.md` | 流程圖繪製慣例 |
+| `notes/流程圖生成規則.md` | 流程圖繪製慣例 |
 
 ---
 
@@ -180,6 +184,7 @@ python tools\md_to_docx.py
 
 ```
 POC_for_autotest/
+├── input/           人類輸入素材（WBS.md + 需求 PDF；跨專案最該替換）
 ├── config/          設定（example 進 git，local 不進）
 ├── specs/           規格 md（從 PDF 展開，依工項分目錄）
 ├── tests/           pytest 測試案例（依工項分目錄）
@@ -187,8 +192,8 @@ POC_for_autotest/
 ├── lib/             共用模組（auth / config / md_reporter / selectors）
 ├── tools/           CLI 入口（run / warm_login / md_to_docx / explore_page / ...）
 ├── prompts/         工程化提示詞庫（00→99；可跨專案重用）
-├── docs/            人類向永久參考文件（架構 / 工具 / SOP）
-├── notes/           簡報素材庫（餵 make-pptx skill）
+├── docs/            人類向永久參考文件（README / 技術架構 / 使用手冊）
+├── notes/           簡報素材庫（餵 make-pptx skill）+ 流程圖生成規則
 ├── .auth/           登入態儲存（gitignored）
 └── .claude/         Claude Code hook 範本（未啟用）
 ```
@@ -211,6 +216,6 @@ POC_for_autotest/
 - [ ] **P4.5** 工項擴展（2-2-3 ✅ / 2-2-4 ✅ / 2-2-5-A ✅ / 2-2-5-B ✅ / 2-3-13 ✅；待重跑驗 xfail）
 - [ ] **P5.7** 夜間排程（Windows 工作排程器；待 P4.5 全綠）
 - [ ] **P6** 前端 meta 同步（待前端加 `data-testid`）
-- [x] **P7** 工程化沉澱（prompts 完整化 + docs/技術架構.md + notes 第一份素材 + push GitHub）
+- [x] **P7** 工程化沉澱（prompts 完整化 + docs 整理 + input/ 收納 + push GitHub）
 
-最新里程碑：2026-05-08 push 到 GitHub。
+最新里程碑：2026-05-08 docs 重整 + push 到 GitHub。

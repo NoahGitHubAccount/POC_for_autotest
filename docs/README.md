@@ -1,19 +1,16 @@
 # POC_for_autotest 文件
 
-人類可閱讀的延伸文件目錄。目前 stub — 隨專案需要再展開。
+人類可閱讀的延伸文件目錄。每份文件聚焦一個主題，避免內容散在多份。
 
 ## 文件索引
 
-| 文件 | 狀態 | 說明 |
-|---|---|---|
-| **工具指令集.md** | ✅ | **CLI 速查表**（產 word 報告 / 跑 pytest / warm-login / explore_page 等） |
-| **技術架構.md** | ✅ | **架構圖 + 資料流 + 跨專案重用 checklist**（下一個專案使用人從這裡入門） |
-| 合作SOP_QA.md | ✅ | 跨 session 合作流程 Q&A |
-| install.md | 未建立 | 詳細安裝步驟（目前在根 README.md 已足） |
-| troubleshooting.md | 未建立 | 疑難排解（目前都記在 `prompts/99_重點經驗.md`） |
-| adr/ | 未建立 | 架構決策記錄 |
+| 文件 | 用途 |
+|---|---|
+| **[使用手冊.md](使用手冊.md)** | **動手時看這份**：Part A 每週協作 SOP（10 個 Q&A）+ Part B CLI 速查 |
+| **[技術架構.md](技術架構.md)** | **第一次來看這份**：目錄樹 + mermaid 模組分層 + 資料流 + 跨專案重用 checklist |
+| 本檔 | 文件目錄索引 |
 
-> 短期內若內容量不大，內容繼續放在 `prompts/99_重點經驗.md` + 根 `README.md` 即可，等真正膨脹再外推到此處。
+> 更早的版本曾分開為 `工具指令集.md` + `合作SOP_QA.md`，2026-05-08 合併為單一「使用手冊」減少導航成本。
 
 ## 撰寫慣例（沿用根 CLAUDE.md）
 
@@ -24,12 +21,13 @@
 
 ## 與根目錄文件的關係
 
-| 根目錄 | docs/ |
+| 根目錄檔 | 角色 |
 |---|---|
-| `README.md` | 入口 + quickstart |
-| `CLAUDE.md` | Agent 地圖 |
+| `README.md` | 入口 + Quickstart + 文件導讀 |
+| `CLAUDE.md` | Agent 行為約束 + 子文件地圖 |
 | `plan.md` | 階段化任務計畫（短期） |
-| `STATUS.md` | 當前進度（高頻變動） |
-| `WBS.md` | 工項階層 |
-| `prompts/99_重點經驗.md` | learnings（累加） |
-| `docs/`（此處） | 永久性參考文件（目前空） |
+| `STATUS.md` | 當前進度（高頻變動，gitignored） |
+| `input/WBS.md` | 工項階層 |
+| `prompts/99_重點經驗.md` | learnings（累加，AI 用） |
+| `docs/`（此處） | 永久性參考文件（人類用） |
+| `notes/` | 簡報素材 + 流程圖規則（make-pptx 餵料） |

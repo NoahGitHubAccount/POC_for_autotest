@@ -28,7 +28,7 @@ audience: 內部技術分享 / 客戶提案 / 主管彙報
 主體必含區塊（依序）：
 
 1. `## 1. 專案簡介`
-2. `## 2. 初始 Prompt`（驅動專案的最初指令，引自 `初始提示詞.md` 或 `prompts/00_…`）
+2. `## 2. 初始 Prompt`（驅動專案的最初指令，引自 `prompts/00_專案發起_提示詞.md`）
 3. `## 3. 過程 Prompt 摘要`（重要轉折點，最多 5 個；可引自 `prompts/99_重點經驗.md`）
 4. `## 4. 套件依賴`（`requirements.txt` 摘錄）
 5. `## 5. Skill 依賴`（用到哪些 `.claude/skills/`，例如 harness-engineer、make-pptx）

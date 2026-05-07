@@ -77,7 +77,7 @@ P6 高度依賴前端工程師加 `data-testid`，目前無時程承諾。
 
 | 編號 | 問題 | 決議 | 理由 | Revisit 觸發 |
 |---|---|---|---|---|
-| Q1 | STATUS.md 是否進 git？ | ❌ 不進，已 `.gitignore` | 個人狀態錨點；團隊共享走 `WBS.md` + `reports/` | 第二位協作者加入 / PR review 帶進度 |
+| Q1 | STATUS.md 是否進 git？ | ❌ 不進，已 `.gitignore` | 個人狀態錨點；團隊共享走 `input/WBS.md` + `reports/` | 第二位協作者加入 / PR review 帶進度 |
 | Q2 | 後端 CAPTCHA bypass 是否支援？ | ✅ 走 warm-login，bypass 不在 POC 範圍 | 受測站後端由其他團隊管，本團隊無協調權；warm-login 已驗證 | 後端團隊主動配合改動（config 已留 `captcha.mode` 開關） |
 | Q3 | 是否需要 CI 整合？ | ❌ POC 階段不上 CI | 範圍小、單一 admin、單機 Windows；ROI 不正 | POC 通過推廣到 ≥ 2 站 / 出現第二位執行者 |
 
