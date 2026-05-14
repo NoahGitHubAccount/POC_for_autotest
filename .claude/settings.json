@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -File \"D:\\daily-records\\專案\\FOXCONN\\POC_for_autotest\\scripts\\check_sync_reminder.ps1\""
+          }
+        ]
+      }
+    ]
+  }
+}

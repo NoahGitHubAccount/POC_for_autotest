@@ -21,7 +21,13 @@
 4. **不 commit secrets**（`config/config.local.yaml`、`.auth/`、`credentials.json`）。
 5. **不執行破壞性 git**（`reset --hard`、`push --force`）除非使用者明示。
 6. **修改超過 5 個檔案前**，先更新 `plan.md` 並徵詢同意。
-7. **session 結束前**若有實作或決議異動 → 更新 `STATUS.md`；純 read-only Q&A 不更新。
+7. **session 結束前**若有實作或決議異動：
+   - 更新 `STATUS.md`（純 read-only Q&A 不更新）
+   - 若 `tests/` 或 `specs/` 有新增或修改 → **明確提醒使用者執行 sync**：
+     ```
+     .\scripts\sync_to_company.ps1
+     # 然後到 aiautotest 執行 git add / commit / push
+     ```
 8. **不過度建構**：不主動擴充工項、不新增 P8+ 階段、不引入新依賴 / 新工具 / 新 hook，**除非使用者明示授權**。範圍排除（如 2-2-2-A 權限工項）一律以 `memory/poc_autotest_decisions.md` 為準。
 
 ## 子文件地圖

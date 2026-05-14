@@ -1,6 +1,16 @@
-# Hook 範本（未啟用）
+# Hook 設定
 
-本目錄保留給未來 Hook 設定使用。**目前無啟用 hook**，由 `CLAUDE.md` 的「行為約束」+ `STATUS.md` 維護規則以「人類約定」方式達成同等效果。
+## 已啟用
+
+| Hook | 腳本 | 說明 |
+|---|---|---|
+| `Stop` | `scripts/check_sync_reminder.ps1` | 每次 Claude 回應結束後，若 aiautotest 有未 commit 變更則顯示 sync 提醒 |
+
+設定檔：`.claude/settings.json`
+
+---
+
+本目錄保留給未來 Hook 設定使用。由 `CLAUDE.md` 的「行為約束」+ `STATUS.md` 維護規則以「人類約定」方式達成同等效果。
 
 ## 何時考慮啟用
 
