@@ -1,12 +1,15 @@
 """
-工項：2-2-5-B 報名名單（4 子項：a/b/c/d）
+工項：2-2-5-B 報名名單（a/b/c/d）
 規格：specs/2-2-5-B 報名名單/
 
-實作狀態（src 解碼 2026-05-06）：
-- B-a 已實作（viewEnrollList 寫 sessionStorage 觸發 scrollIntoView 到 #registrationListTitle）→ 完整可驗
-- B-b/c/d：DashboardDetail 內報名名單 toolbar 只有「下載報名資料」**單一按鈕**，
-  src `PageSectionADActivityRegistrationList.handleToolbarAction` 是 console.log；
-  spec 預期的三個分開按鈕 src 中**沒有**。AC 全標 SKIP-pending。
+src 解碼（2026-05-14 更新）：
+- B-a：viewEnrollList 跳轉 DashboardDetail + sessionStorage scroll → 完整驗
+- B-b/c/d：EVEventEntity.ts 行操作第 2 個 icon（報名名單 group）menu 中已有獨立按鈕
+  - B-b: 匯出報名名單 Excel（exportRegistrations，5/5 前端完成）
+  - B-c: 匯出取消報名名單 Excel（exportCancelledRegistrations，5/5 前端完成）
+  - B-d: 匯出報到名單 Excel（exportCheckedInRegistrations，5/5 前端完成）
+  注意：DashboardDetail 頁面的 toolbar 仍只有「下載報名資料」單一按鈕（console.log），
+  三個獨立匯出入口在「列表頁第 2 個 icon menu」，非 DashboardDetail 內。
 """
 from __future__ import annotations
 import pytest
@@ -55,14 +58,11 @@ def test_2_2_5_B_a_AC3_點擊後跳轉URL正確(page: Page, config, report_attac
 
 @pytest.mark.wbs("2-2-5-B-a")
 def test_2_2_5_B_a_AC4_跳轉後可見報名名單錨點(page: Page, config, report_attach):
-    """src 中：DashboardDetail 載入後若 sessionStorage 有 dashboardDetailScrollTo='registrationList'
-    會 retry 找 #registrationListTitle 並 scrollIntoView。
-    這裡只驗錨點 element 存在 + 可見（不嚴格驗 scroll 已完成）。"""
     _shared.open_event_list(page, config["base_url"])
     _shared.open_enroll_list_menu(page)
     EventListPage.menu_item_by_text(page, "查看報名名單").click()
     page.wait_for_url("**/DashboardDetail/**", timeout=15000)
-    page.wait_for_timeout(3000)  # 等 retry scroll
+    page.wait_for_timeout(3000)
     title = DashboardDetailPage.registration_title(page)
     report_attach(url=page.url, expected="頁面內含『報名名單』section title")
     expect(title).to_be_visible(timeout=10000)
@@ -70,53 +70,84 @@ def test_2_2_5_B_a_AC4_跳轉後可見報名名單錨點(page: Page, config, rep
 
 
 # ============================================================
-# 2-2-5-B-b 匯出報名紀錄 Excel（前端只有 console.log）
+# 2-2-5-B-b 匯出報名名單 Excel（5/5 前端完成；入口在列表頁第 2 個 icon menu）
 # ============================================================
 
+_BUTTON_TEXT_B_B = "匯出報名名單 Excel"
+
+
 @pytest.mark.wbs("2-2-5-B-b")
-@pytest.mark.xfail(reason="依舊版 src 推測 toolbar handler 為 console.log；新版測試機可能已接真實 download（XPASS 表示可解 xfail）", strict=False)
-def test_2_2_5_B_b_AC1_按鈕存在於報名名單section(page: Page, config, report_attach):
+def test_2_2_5_B_b_AC1_按鈕存在於menu(page: Page, config, report_attach):
     _shared.open_event_list(page, config["base_url"])
     _shared.open_enroll_list_menu(page)
-    EventListPage.menu_item_by_text(page, "查看報名名單").click()
-    page.wait_for_url("**/DashboardDetail/**", timeout=15000)
-    page.wait_for_timeout(3000)
-    btn = DashboardDetailPage.download_registration_button(page)
-    btn.wait_for(state="visible", timeout=10000)
+    report_attach(url=page.url, expected=f"menu 含『{_BUTTON_TEXT_B_B}』")
+    EventListPage.menu_item_by_text(page, _BUTTON_TEXT_B_B).wait_for(state="visible", timeout=5000)
+    report_attach(actual="按鈕 visible")
 
 
 @pytest.mark.wbs("2-2-5-B-b")
-@pytest.mark.xfail(reason="依舊版 src 推測 toolbar handler 為 console.log；新版測試機可能已接 download（XPASS 表示可解 xfail）", strict=False)
 def test_2_2_5_B_b_AC2_點擊觸發下載_xlsx(page: Page, config, report_attach):
     _shared.open_event_list(page, config["base_url"])
     _shared.open_enroll_list_menu(page)
-    EventListPage.menu_item_by_text(page, "查看報名名單").click()
-    page.wait_for_url("**/DashboardDetail/**", timeout=15000)
-    page.wait_for_timeout(3000)
-    with page.expect_download(timeout=15000) as dl_info:
-        DashboardDetailPage.download_registration_button(page).click()
-    assert dl_info.value.suggested_filename.endswith(".xlsx")
+    report_attach(url=page.url, expected="點擊後觸發 xlsx 下載")
+    with page.expect_download(timeout=30000) as dl_info:
+        EventListPage.menu_item_by_text(page, _BUTTON_TEXT_B_B).click()
+    download = dl_info.value
+    report_attach(actual=f"下載檔名：{download.suggested_filename}")
+    assert download.suggested_filename.endswith(".xlsx"), f"非 xlsx：{download.suggested_filename}"
 
 
 # ============================================================
-# 2-2-5-B-c 匯出取消報名紀錄 Excel（前端無獨立按鈕）
+# 2-2-5-B-c 匯出取消報名名單 Excel（5/5 前端完成；入口在列表頁第 2 個 icon menu）
 # ============================================================
+
+_BUTTON_TEXT_B_C = "匯出取消報名名單 Excel"
+
 
 @pytest.mark.wbs("2-2-5-B-c")
-@pytest.mark.xfail(reason="舊版 src 沒有獨立『匯出取消報名』按鈕；新版可能已加（XPASS 表示可解 xfail）", strict=False)
-def test_2_2_5_B_c_AC1_按鈕存在(page: Page, config, report_attach):
+def test_2_2_5_B_c_AC1_按鈕存在於menu(page: Page, config, report_attach):
     _shared.open_event_list(page, config["base_url"])
     _shared.open_enroll_list_menu(page)
-    page.get_by_role("menuitem", name="匯出取消報名紀錄").wait_for(state="visible", timeout=5000)
+    report_attach(url=page.url, expected=f"menu 含『{_BUTTON_TEXT_B_C}』")
+    EventListPage.menu_item_by_text(page, _BUTTON_TEXT_B_C).wait_for(state="visible", timeout=5000)
+    report_attach(actual="按鈕 visible")
+
+
+@pytest.mark.wbs("2-2-5-B-c")
+def test_2_2_5_B_c_AC2_點擊觸發下載_xlsx(page: Page, config, report_attach):
+    _shared.open_event_list(page, config["base_url"])
+    _shared.open_enroll_list_menu(page)
+    report_attach(url=page.url, expected="點擊後觸發 xlsx 下載")
+    with page.expect_download(timeout=30000) as dl_info:
+        EventListPage.menu_item_by_text(page, _BUTTON_TEXT_B_C).click()
+    download = dl_info.value
+    report_attach(actual=f"下載檔名：{download.suggested_filename}")
+    assert download.suggested_filename.endswith(".xlsx"), f"非 xlsx：{download.suggested_filename}"
 
 
 # ============================================================
-# 2-2-5-B-d 匯出報到名單 Excel（前端無獨立按鈕）
+# 2-2-5-B-d 匯出報到名單 Excel（5/5 前端完成；入口在列表頁第 2 個 icon menu）
 # ============================================================
+
+_BUTTON_TEXT_B_D = "匯出報到名單 Excel"
+
 
 @pytest.mark.wbs("2-2-5-B-d")
-@pytest.mark.xfail(reason="舊版 src 沒有獨立『匯出報到名單』按鈕；新版可能已加（XPASS 表示可解 xfail）", strict=False)
-def test_2_2_5_B_d_AC1_按鈕存在(page: Page, config, report_attach):
+def test_2_2_5_B_d_AC1_按鈕存在於menu(page: Page, config, report_attach):
     _shared.open_event_list(page, config["base_url"])
     _shared.open_enroll_list_menu(page)
-    page.get_by_role("menuitem", name="匯出報到名單").wait_for(state="visible", timeout=5000)
+    report_attach(url=page.url, expected=f"menu 含『{_BUTTON_TEXT_B_D}』")
+    EventListPage.menu_item_by_text(page, _BUTTON_TEXT_B_D).wait_for(state="visible", timeout=5000)
+    report_attach(actual="按鈕 visible")
+
+
+@pytest.mark.wbs("2-2-5-B-d")
+def test_2_2_5_B_d_AC2_點擊觸發下載_xlsx(page: Page, config, report_attach):
+    _shared.open_event_list(page, config["base_url"])
+    _shared.open_enroll_list_menu(page)
+    report_attach(url=page.url, expected="點擊後觸發 xlsx 下載")
+    with page.expect_download(timeout=30000) as dl_info:
+        EventListPage.menu_item_by_text(page, _BUTTON_TEXT_B_D).click()
+    download = dl_info.value
+    report_attach(actual=f"下載檔名：{download.suggested_filename}")
+    assert download.suggested_filename.endswith(".xlsx"), f"非 xlsx：{download.suggested_filename}"

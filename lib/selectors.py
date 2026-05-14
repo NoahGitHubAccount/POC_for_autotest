@@ -159,6 +159,25 @@ class DashboardDetailPage:
         ).strip()
 
 
+class ActivityInfoPage:
+    """活動資訊頁（公開報名頁，/ActivityInfo?evMainEventId=...&evEventId=...）。
+
+    src 解碼 2026-05-14（ActivityInfo.vue）：
+    - 主視覺 banner：<img :src="bannerImageUrl" alt="" @load="imageLoaded = true">
+    - imageLoaded=true 後 img 有 opacity-100 class；未載入時 opacity-0
+    - bannerImageUrl 由 fileSvc.getImageByResourceId(fileResourceId) 取得
+    """
+
+    @staticmethod
+    def banner_img(page: "Page") -> "Locator":
+        return page.locator("img.object-cover").first
+
+    @staticmethod
+    def banner_loaded(page: "Page") -> "Locator":
+        """圖片載入完成後 opacity-100 class 的 img。"""
+        return page.locator("img.object-cover.opacity-100").first
+
+
 class EVEventEditPage:
     """活動編輯頁（/EVEventEdit/source=EVEvent&pkid=<id>）。
 
@@ -201,3 +220,25 @@ class EVEventEditPage:
         return page.get_by_role("button", name="儲存").or_(
             page.get_by_role("button", name="確認修改")
         ).first
+
+    @staticmethod
+    def open_from_event_list(page: Page, base_url: str) -> None:
+        """從活動列表點第一筆活動名稱進入 EVEventEdit 頁。"""
+        page.goto(base_url + EventListPage.PATH, wait_until="domcontentloaded")
+        EventListPage.reset_button(page).wait_for(state="visible", timeout=15000)
+        page.wait_for_timeout(1500)
+        first_row = EventListPage.list_rows(page).nth(0)
+        idx = EventListPage.column_index_by_header(page, "活動名稱")
+        first_row.locator("td").nth(idx).click()
+        page.wait_for_url("**/EVEventEdit/**", timeout=15000)
+        page.wait_for_timeout(2000)
+
+    @staticmethod
+    def section_header(page: Page, title: str) -> Locator:
+        """依 section 標題文字找對應的 panel header。"""
+        return page.get_by_text(title, exact=True).first
+
+    @staticmethod
+    def field_label(page: Page, label_text: str) -> Locator:
+        """依 label 文字找表單欄位 label。"""
+        return page.get_by_text(label_text, exact=True).first
