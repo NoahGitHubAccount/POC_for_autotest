@@ -116,6 +116,90 @@ def _build(base: Path, out_path: Path, title: str, scope: str, date_label: str) 
     return True
 
 
+def _case_block(r: dict, ledger_dir_name: str, idx: int, wbs: str) -> list[str]:
+    """單一案例的截圖區塊（跨工項扁平視圖用，標題帶工項）。"""
+    sec = ["", f"#### {idx}. [{wbs}] {r['title']} — {r['status']}",
+           f"- 預期：{r['expected']}", f"- 實際：{r['actual']}"]
+    if r["explain"] and r["explain"] != "—":
+        sec.append(f"- 說明：{r['explain']}")
+    if r["shot"]:
+        rel = r["shot"].replace("./screenshots/", f"./{ledger_dir_name}/screenshots/")
+        rel = quote(rel, safe="/.")  # 空格與 [] 需 URL 編碼，否則多數渲染器不顯示
+        sec += ["", f"![{r['func']}]({rel})"]
+    else:
+        sec.append("- （無截圖）")
+    return sec
+
+
+def _build_review_flat(base: Path, out_path: Path) -> bool:
+    """待審彙整（使用者審查視角）：**全域** PASS 區在前、xfail 區在後，不分工項混排；
+    工項只作為列上標籤；規則原文對照集中附錄。"""
+    ledgers = sorted(
+        (d / f"{d.name}.md")
+        for d in base.iterdir()
+        if d.is_dir() and (d / f"{d.name}.md").exists()
+    ) if base.exists() else []
+    if not ledgers:
+        print(f"[略過] {base} 下沒有台帳")
+        return False
+
+    all_rows: list[tuple[str, str, dict]] = []  # (wbs_stem, ledger_dir_name, row)
+    overview: list[str] = []
+    for md in ledgers:
+        rows = _parse_rows(md.read_text(encoding="utf-8"))
+        p = sum(1 for r in rows if "✅" in r["status"])
+        xf = sum(1 for r in rows if "xfail" in r["status"])
+        other = len(rows) - p - xf
+        last = max((r["date"] for r in rows), default="—")
+        overview.append(f"| {md.stem} | {len(rows)} | {p} | {xf} | {other} | {last} |")
+        for r in rows:
+            all_rows.append((md.stem, md.parent.name, r))
+
+    passes = [(w, d, r) for w, d, r in all_rows if "✅" in r["status"]]
+    others = [(w, d, r) for w, d, r in all_rows if "✅" not in r["status"]]
+
+    now = _dt.datetime.now().strftime("%Y-%m-%d %H:%M")
+    out: list[str] = [
+        "# 整合測試 — 待審彙整報告",
+        "",
+        f"- 彙整時間：**{now}**",
+        f"- 收錄範圍：已測待審之案例（尚未定版），共 {len(ledgers)} 個測試項目、{len(all_rows)} 案"
+        f"（✅ {len(passes)}／⚠ {len(others)}）",
+        "- 排版：**全部工項的 ✅ 通過案例集中在前、⚠ 發現問題(xfail) 集中在後**；工項見列上標籤；規則原文見文末附錄",
+        "",
+        "## 測試項目總覽",
+        "",
+        "| 測試項目 | 案例數 | ✅ 通過 | ⚠ 發現問題(xfail) | 其他 | 收集日期 |",
+        "|---|---|---|---|---|---|",
+        *overview,
+    ]
+
+    def _flat_section(header: str, group: list, start: int) -> list[str]:
+        sec = ["", f"## {header}", "",
+               "| # | 工項 | 子測試項目 | 結果 | 說明 | 收集日期 |",
+               "|---|---|---|---|---|---|"]
+        for i, (w, _d, r) in enumerate(group, start):
+            wbs = w.split(" ")[0]
+            sec.append(f"| {i} | {wbs} | {r['title']} | {r['status']} | {r['explain']} | {r['date']} |")
+        sec += ["", f"### 截圖（{header.split('（')[0]}）"]
+        for i, (w, d, r) in enumerate(group, start):
+            sec += _case_block(r, d, i, w.split(" ")[0])
+        return sec
+
+    out += _flat_section(f"✅ 通過案例（{len(passes)} 案）", passes, 1)
+    out += _flat_section(f"⚠ 發現問題案例（{len(others)} 案）", others, len(passes) + 1)
+
+    out += ["", "## 附錄：各工項規則原文對照", ""]
+    for md in ledgers:
+        spec_req = load_spec_requirements(md.stem.split(" ")[0])
+        if spec_req:
+            out += [f"### {md.stem}", "", spec_req, ""]
+
+    out_path.write_text("\n".join(out) + "\n", encoding="utf-8")
+    print(f"已產出：{out_path}")
+    return True
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--final", action="store_true", help="只產 final 定版總報告")
@@ -127,8 +211,8 @@ def main() -> int:
         _build(FINAL, FINAL / "整合測試總報告.md", "整合測試總報告",
                "已確認定版之測試案例（持續累積）", "最後定版日")
     if do_review:
-        _build(REVIEW, REVIEW / "待審彙整報告.md", "整合測試 — 待審彙整報告",
-               "已測待審之案例（尚未定版）", "收集日期")
+        # 待審軌＝使用者審查視角：全域 PASS 前、xfail 後（2026-07-12 裁示，勿改回工項分節）
+        _build_review_flat(REVIEW, REVIEW / "待審彙整報告.md")
     return 0
 
 
