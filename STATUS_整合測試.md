@@ -41,10 +41,16 @@
 | IT-12 | 憑證頁（顯示/位置/QR 三態） | 高 | 匯集待審 6 案 | `specs/integration/IT-12 前台憑證頁.md` | `tests/integration/test_it12_前台憑證頁.py` | review 6 案（5P/1XF） | AC1-4✓；AC5 過期仍顯示 QR **xfail [ISS-013]**；AC6 憑證顯示資訊呈現✓（位置差異使用者裁決可接受，~~ISS-017~~ 撤案）；已報到態阻塞（IT-14 掃碼）；序號位數造態受限（見 spec） |
 | IT-13 | 票夾頁（已報名/歷史/取消） | ~~高~~→中 | 匯集待審 4 案 | `specs/integration/IT-13 前台票夾頁.md` | `test_it10_前台已登入態.py`（ac1）＋`test_it13_前台票夾頁.py` | review 4 案（3P/1XF） | AC1 已報名+箭頭✓、AC2 歷史無箭頭✓、AC3 取消無箭頭✓、AC4 取消多次未合併 **xfail [ISS-011]**——docx 三條規則全覆蓋 |
 | IT-14 | 工作人員驗證（4 狀態×掃碼/手輸） | 高：帳號人工綁定 | 未展開 | — | — | — | |
-| IT-15 | 登入 token（維持登入/SSO 轉跳） | ~~高~~→中 | 匯集待審 1 案 | `specs/integration/IT-15 登入token維持.md` | `tests/integration/test_it15_登入token維持.py` | review 1 案（1P） | AC1 登入態跨頁維持（票夾→資訊頁→所有活動→票夾＋logintoken）✓；token 效期 refresh 與高市府 SSO 轉跳＝人工（SSO 需使用者手機認證側錄一次） |
+| IT-15 | 登入 token（維持登入/SSO 轉跳） | ~~高~~→中 | 匯集待審 1 案 | `specs/integration/IT-15 登入token維持.md` | `tests/integration/test_it15_登入token維持.py` | review 1 案（1P） | AC1 登入態跨頁維持✓；**SSO 轉跳＝QA 不可測定案**（市民系統無 QA 區，轉跳目標是正式機；07-12 側錄另見正式機點活動報名卡住，僅記錄）；token 效期 refresh 無法操縱、以跨日存活側證 |
 | IT-16 | 設定→前台生效對照 | ~~高~~→低（前台原語齊備） | 匯集待審 1 案 | `specs/integration/IT-16 設定前台生效對照.md` | `tests/integration/test_it16_設定前台生效對照.py` | review 1 案（1P） | AC1 改活動名稱/地點→前台資訊頁對照✓；待展開：報名按鈕備註/Editor 三 tabs/曝光下架/場次時間（依價值排序入 spec） |
 
 ## 決議紀錄（最新在上）
+
+- **2026-07-12 XXII** — **ISS-017 撤案＋版控大修＋IT-15 SSO 定案**：
+  - ISS-017（憑證顯示資訊位置）使用者裁決可接受 → AC6 改 PASS 斷言（值有呈現）、問題單撤案；IT-12 現 6 案（5P/1XF）。
+  - **版控修復**：sync 曾把個人 `.gitignore` 鏡像到公司 repo，導致 tests/specs 交付產出被 ignore（公司 repo 5 月起沒收到產出）——sync 腳本已排除 .gitignore、公司 .gitignore 已修；公司 repo commit 133 檔/+12288 行（**push 待內網**，netgit 連不上）；個人 repo 收框架新檔（ops.py/工具/dom_facts）2 commits。
+  - **IT-15 SSO 轉跳＝QA 不可測定案**：市民系統（ktc.kcg.gov.tw）僅正式機、無 QA 區，轉跳目標為正式活動模組。07-12 人工側錄（正式機登入成功）另見「點活動報名畫面卡住無轉跳」——正式環境行為僅記錄。此 AC 待 QA 版 SSO 入口或正式驗收人工驗。
+  - **教訓入庫**（記憶+99經驗）：給使用者操作的有頭視窗一律 `no_viewport=True`，固定 viewport 只給自動化。
 
 - **2026-07-12 XXI** — **B6 解鎖＋IT-11/12 展開＋IT-15 首案（+4 案，發現 3 缺陷）**：
   - **B6 多欄位活動造態打通**：`ops.add_registrant_field()`＝`POST Template/EVFormField/Copy`（模板 1姓名/2手機/7Email/8身分證…見 `FORM_FIELD_TEMPLATES`）；Copy 回傳 id 是模板 id 需 GET Event/EVFormField 反查；isRequired PATCH 必帶 `evEventEntity:{key}`。
