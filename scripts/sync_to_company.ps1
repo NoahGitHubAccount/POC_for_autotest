@@ -47,6 +47,8 @@ if (-not $trackedFiles) {
 $copied = 0; $skipped = 0; $failed = 0
 
 foreach ($relPath in $trackedFiles) {
+    # .gitignore 兩 repo 政策不同（個人排除 tests/specs 產出、公司要收），不得鏡像
+    if ($relPath -eq '.gitignore') { $skipped++; continue }
     $winRel  = $relPath -replace '/', '\'
     $srcFile = Join-Path $SourceDir $winRel
     $dstFile = Join-Path $TargetDir $winRel
