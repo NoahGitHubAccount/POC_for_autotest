@@ -200,7 +200,13 @@ def _explain(x: dict) -> str:
     return "—"
 
 
+def _pass_first(items: list) -> list:
+    """報告列順序＝先 pass/xfail 分組再案例（使用者閱讀習慣）：PASS 在前、xfail/failed/skip 在後，組內維持執行順序。"""
+    return sorted(items, key=lambda x: 0 if (x["outcome"] == "passed" and not x.get("wasxfail")) else 1)
+
+
 def _render_one(wbs: str, title: str, items: list, now_str: str, mode: str) -> str:
+    items = _pass_first(items)
     passed  = sum(1 for x in items if x["outcome"] == "passed"  and not x.get("wasxfail"))
     failed  = sum(1 for x in items if x["outcome"] == "failed")
     xfail   = sum(1 for x in items if x["outcome"] == "skipped" and     x.get("wasxfail"))
