@@ -101,6 +101,29 @@ def _take_screenshot(item, outcome_str: str, run_dir: Path) -> str | None:
     return f"./screenshots/{fname}"
 
 
+def snap_page(item, page, label: str) -> str | None:
+    """測試中途快照（一案多圖用）：立刻截當下頁面存 run 目錄並登記到 item。
+
+    供 conftest 的 snap fixture 呼叫；跨頁/前後台對照案每個關鍵畫面各拍一張
+    （2026-07-12 使用者退件要求：跨多頁面的案例圖片要各抓一張）。
+    """
+    run_dir = _run_dir(item.session)
+    shots_dir = run_dir / "screenshots"
+    shots_dir.mkdir(parents=True, exist_ok=True)
+    fname = _safe_filename(f"{_wbs_of(item)}__{item.name}__{label}.png")
+    try:
+        page.screenshot(path=str(shots_dir / fname), full_page=True)
+    except Exception:
+        return None
+    rel = f"./screenshots/{fname}"
+    shots = getattr(item, "_extra_shots", None)
+    if shots is None:
+        shots = []
+        item._extra_shots = shots
+    shots.append((label, rel))
+    return rel
+
+
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     outcome = yield
@@ -134,6 +157,7 @@ def pytest_runtest_makereport(item, call):
             "expected": getattr(item, "_expected", None),
             "url": getattr(item, "_last_url", None),
             "shot": shot_rel,
+            "extra_shots": list(getattr(item, "_extra_shots", []) or []),
         }
     )
 
@@ -246,6 +270,8 @@ def _render_one(wbs: str, title: str, items: list, now_str: str, mode: str) -> s
             status = f"{icon} {x['outcome']}"
         pure_skip = x["outcome"] == "skipped" and not x.get("wasxfail")
         shot_cell = f"[圖]({x['shot']})" if x.get("shot") and not pure_skip else "—"
+        for j, (_lbl, rel) in enumerate(x.get("extra_shots") or [], 2):
+            shot_cell += f" [圖{j}]({rel})"
         lines.append(
             f"| {i} | {x['title']} | {status} | {x['duration']:.2f}s | {shot_cell} | {_explain(x)} |"
         )
@@ -272,7 +298,7 @@ def _render_one(wbs: str, title: str, items: list, now_str: str, mode: str) -> s
 
     if mode == "always":
         # 純 skip（非 xfail）從未執行操作，截圖必為空白頁 → 不列截圖區（總覽表已附理由）
-        with_shots = [x for x in items if x.get("shot")
+        with_shots = [x for x in items if (x.get("shot") or x.get("extra_shots"))
                       and (x["outcome"] != "skipped" or x.get("wasxfail"))]
         if with_shots:
             lines.append("")
@@ -289,8 +315,15 @@ def _render_one(wbs: str, title: str, items: list, now_str: str, mode: str) -> s
                 lines.append(f"- 實際：{x.get('actual') or '（未提供）'}")
                 if x["outcome"] != "passed" or x.get("wasxfail"):
                     lines.append(f"- 說明：{_explain(x)}")
-                lines.append("")
-                lines.append(f"![{x['name']}]({x['shot']})")
+                if x.get("shot"):
+                    lines.append("")
+                    lines.append(f"![shot{i}]({x['shot']})")
+                # 一案多圖：測試中途 snap 的跨頁/前後台對照圖，逐張帶標籤列出
+                for j, (lbl, rel) in enumerate(x.get("extra_shots") or [], 2):
+                    lines.append("")
+                    lines.append(f"（圖{j}：{lbl}）")
+                    lines.append("")
+                    lines.append(f"![shot{i}_{j}]({rel})")
 
     lines.append("")
     return "\n".join(lines)

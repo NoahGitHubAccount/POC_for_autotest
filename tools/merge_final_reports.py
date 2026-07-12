@@ -37,14 +37,12 @@ def _parse_rows(text: str) -> list[dict]:
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
         if len(cells) < 10:
             continue
-        shot = None
-        sm = re.search(r"\((\./screenshots/[^)]+)\)", cells[7])
-        if sm:
-            shot = unquote(sm.group(1))  # 台帳內可能已編碼，先還原
+        shots = [unquote(s) for s in re.findall(r"\((\./screenshots/[^)]+)\)", cells[7])]  # 一案多圖
         rows.append({
             "n": cells[0], "func": cells[1].strip("`"), "title": cells[2],
             "status": cells[3], "expected": cells[4], "actual": cells[5],
-            "explain": cells[6], "shot": shot, "date": cells[8], "run": cells[9],
+            "explain": cells[6], "shot": shots[0] if shots else None, "shots": shots,
+            "date": cells[8], "run": cells[9],
         })
     return rows
 
@@ -100,12 +98,15 @@ def _build(base: Path, out_path: Path, title: str, scope: str, date_label: str) 
             sec.append(f"- 實際：{r['actual']}")
             if r["explain"] and r["explain"] != "—":
                 sec.append(f"- 說明：{r['explain']}")
-            if r["shot"]:
-                rel = r["shot"].replace("./screenshots/", f"./{md.parent.name}/screenshots/")
+            for k, s in enumerate(r.get("shots") or [], 1):
+                rel = s.replace("./screenshots/", f"./{md.parent.name}/screenshots/")
                 rel = quote(rel, safe="/.")  # 空格與 [] 需 URL 編碼，否則多數渲染器不顯示
+                if k > 1:
+                    sec.append("")
+                    sec.append(f"（圖{k}）")
                 sec.append("")
-                sec.append(f"![case{r['n']}]({rel})")  # alt 短 ASCII（長中文 alt 會破格）
-            else:
+                sec.append(f"![case{r['n']}_{k}]({rel})")  # alt 短 ASCII（長中文 alt 會破格）
+            if not r.get("shots"):
                 sec.append("- （無截圖）")
         sections.append("\n".join(sec))
 
@@ -123,14 +124,16 @@ def _case_block(r: dict, ledger_dir_name: str, idx: int, wbs: str) -> list[str]:
     標題勿用 [方括號]（Markdown 連結語法）、alt 用短 ASCII、圖與標題間勿夾清單。
     """
     sec = ["", f"#### {idx}.（{wbs}）{r['title']} — {r['status']}"]
-    if r["shot"]:
-        rel = r["shot"].replace("./screenshots/", f"./{ledger_dir_name}/screenshots/")
+    for k, s in enumerate(r.get("shots") or [], 1):
+        rel = s.replace("./screenshots/", f"./{ledger_dir_name}/screenshots/")
         rel = quote(rel, safe="/.")  # 空格與 [] 需 URL 編碼，否則多數渲染器不顯示
-        sec += ["", f"![case{idx}]({rel})"]
+        if k > 1:
+            sec += ["", f"（圖{k}）"]
+        sec += ["", f"![case{idx}_{k}]({rel})"]
     sec += ["", f"- 預期：{r['expected']}", f"- 實際：{r['actual']}"]
     if r["explain"] and r["explain"] != "—":
         sec.append(f"- 說明：{r['explain']}")
-    if not r["shot"]:
+    if not r.get("shots"):
         sec.append("- （無截圖）")
     return sec
 

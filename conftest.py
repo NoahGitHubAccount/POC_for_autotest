@@ -104,6 +104,19 @@ def _restore_session_storage(context, authenticated):
 
 
 @pytest.fixture
+def snap(request):
+    """一案多圖：測試中途對指定 page 拍快照入報告（跨頁/前後台對照案每個關鍵畫面各拍一張）。
+
+    用法：snap(page, "前台資訊頁") / snap(admin_page, "後台編輯頁")
+    """
+    from lib.md_reporter import snap_page
+
+    def _snap(page, label: str):
+        return snap_page(request.node, page, label)
+    return _snap
+
+
+@pytest.fixture
 def report_attach(request):
     """測試案例呼叫此 fixture 將 expected/actual/url 附到 item 供 reporter 使用。"""
     def _attach(*, expected: str | None = None, actual: str | None = None, url: str | None = None):

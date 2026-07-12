@@ -38,14 +38,15 @@ def _parse_report(md_path: Path) -> dict[str, dict]:
         r"^\|\s*\d+\s*\|(.+?)\|(.+?)\|\s*[\d.]+s\s*\|(.+?)\|(.*?)\|\s*$", text, re.M
     ):
         title, status, shot_cell, explain = (g.strip() for g in m.groups())
-        sm = re.search(r"\((\./screenshots/[^)]+)\)", shot_cell)
-        shot = sm.group(1) if sm else None
+        shots = re.findall(r"\((\./screenshots/[^)]+)\)", shot_cell)  # 一案多圖：全取
+        shot = shots[0] if shots else None
         func = None
         if shot:
+            # 主圖名=<wbs>__<func>[chromium].png；snap 圖名多 __<label> 尾段，主圖必為第一張
             func = re.sub(r"\[.*?\]\.png$", "", Path(shot).name.split("__", 1)[-1])
         if func:
             cases[func] = {"title": title, "status": status, "explain": explain or "—",
-                           "shot": shot, "expected": "—", "actual": "—"}
+                           "shot": shot, "shots": shots, "expected": "—", "actual": "—"}
     for m in re.finditer(r"^### \d+\. (\S+?)\[[^\]]*\][^\n]*\n(.*?)(?=^### |\Z)", text, re.M | re.S):
         func, block = m.group(1), m.group(2)
         if func not in cases:
@@ -133,11 +134,15 @@ def main() -> int:
     added, updated = [], []
     for func, c in sorted(cases.items()):
         shot_dst = "—"
-        if c["shot"]:
-            src = run_dir / c["shot"].lstrip("./")
+        links = []
+        for k, s in enumerate(c.get("shots") or ([c["shot"]] if c["shot"] else []), 1):
+            src = run_dir / s.lstrip("./")
             if src.exists():
                 shutil.copy2(src, shots_dir / src.name)
-                shot_dst = f"[圖](./screenshots/{quote(src.name, safe='.')})"
+                label = "圖" if k == 1 else f"圖{k}"
+                links.append(f"[{label}](./screenshots/{quote(src.name, safe='.')})")
+        if links:
+            shot_dst = " ".join(links)
         idx = next((i for i, l in enumerate(lines) if f"`{func}`" in l), None)
         n = (lines[idx].split("|")[1].strip() if idx is not None
              else sum(1 for l in lines if l.startswith("| ") and "---" not in l and "案例（函式）" not in l) + 1)
