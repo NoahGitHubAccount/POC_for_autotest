@@ -1,15 +1,23 @@
-param(
+﻿param(
     [string]$shot = "always",
+    [string]$env_name = "",       # 目標環境：dev | test | prod | local（空白 = 讀 TEST_ENV 環境變數）
     [string[]]$ExtraArgs = @()
 )
 
 $root = Split-Path $PSScriptRoot -Parent
 Set-Location $root
 
+# 若傳入 -env_name 則覆寫環境變數
+if ($env_name -ne "") {
+    $env:TEST_ENV = $env_name
+}
+$currentEnv = if ($env:TEST_ENV) { $env:TEST_ENV } else { "local" }
+
 Write-Host ""
 Write-Host "================================================================"
-Write-Host " Step 1/3 -- Warm Login"
+Write-Host " Step 1/3 -- Warm Login  (env=$currentEnv)"
 Write-Host "================================================================"
+$env:PYTHONUTF8 = "1"
 python tools/run.py --warm-login
 if ($LASTEXITCODE -ne 0) {
     Write-Host "[ERROR] warm-login failed." -ForegroundColor Red
@@ -18,10 +26,9 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host ""
 Write-Host "================================================================"
-Write-Host " Step 2/3 -- Full Test Suite"
+Write-Host " Step 2/3 -- Full Test Suite  (env=$currentEnv)"
 Write-Host "================================================================"
-$env:PYTHONUTF8 = "1"
-$pytestArgs = @("tests/", "-v", "--shot=$shot") + $ExtraArgs
+$pytestArgs = @("tests/", "-v", "--tb=short", "--disable-warnings", "--shot=$shot") + $ExtraArgs
 & .\.venv\Scripts\pytest.exe @pytestArgs
 $exitCode = $LASTEXITCODE
 
@@ -40,3 +47,4 @@ if ($latestRun) {
 }
 
 exit $exitCode
+

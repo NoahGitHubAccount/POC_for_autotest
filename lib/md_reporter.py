@@ -13,6 +13,8 @@
 """
 from __future__ import annotations
 import datetime as _dt
+import os
+import re
 from pathlib import Path
 
 import pytest
@@ -43,7 +45,9 @@ def _shot_mode(config) -> str:
 def _run_id(session) -> str:
     rid = getattr(session.config, _RUN_ID_KEY, None)
     if rid is None:
-        rid = _dt.datetime.now().strftime("%Y%m%d_%H%M")
+        # 外部排程（如 nightly_run.ps1）可用環境變數指定，讓 gap 檔 / 報告 / docx 落同一目錄
+        # 未指定時精度到秒：防同分鐘兩個 pytest 程序共用同一 run 目錄（見 99 經驗 2026-05-18）
+        rid = os.environ.get("MD_REPORT_RUN_ID") or _dt.datetime.now().strftime("%Y%m%d_%H%M%S")
         setattr(session.config, _RUN_ID_KEY, rid)
     return rid
 
@@ -99,6 +103,13 @@ def _take_screenshot(item, outcome_str: str, run_dir: Path) -> str | None:
 def pytest_runtest_makereport(item, call):
     outcome = yield
     rep = outcome.get_result()
+
+    # 計算 @pytest.mark.skip / skipif 的 setup-phase skip（不會進 call phase）
+    if rep.when == "setup" and rep.outcome == "skipped":
+        n = getattr(item.session.config, "_md_setup_skips", 0)
+        setattr(item.session.config, "_md_setup_skips", n + 1)
+        return
+
     if rep.when != "call":
         return
 
@@ -113,6 +124,8 @@ def pytest_runtest_makereport(item, call):
             if item.function.__doc__
             else item.name,
             "outcome": rep.outcome,
+            "wasxfail": bool(getattr(rep, "wasxfail", None)),
+            "xfail_reason": str(getattr(rep, "wasxfail", "") or ""),
             "duration": rep.duration,
             "longrepr": str(rep.longrepr) if rep.longrepr else "",
             "actual": getattr(item, "_actual", None),
@@ -144,19 +157,54 @@ def pytest_sessionfinish(session, exitstatus):
         title = _try_load_wbs_title(wbs) or wbs
         report_path = run_dir / _safe_filename(f"{title}.md")
         report_path.write_text(_render_one(wbs, title, items, now_str, mode), encoding="utf-8")
-        passed = sum(1 for x in items if x["outcome"] == "passed")
-        failed = sum(1 for x in items if x["outcome"] == "failed")
-        skipped = sum(1 for x in items if x["outcome"] == "skipped")
-        summary_rows.append((wbs, title, passed, failed, skipped, report_path.name))
+        passed  = sum(1 for x in items if x["outcome"] == "passed"  and not x.get("wasxfail"))
+        failed  = sum(1 for x in items if x["outcome"] == "failed")
+        xfail   = sum(1 for x in items if x["outcome"] == "skipped" and     x.get("wasxfail"))
+        skipped = sum(1 for x in items if x["outcome"] == "skipped" and not x.get("wasxfail"))
+        summary_rows.append((wbs, title, passed, failed, xfail, skipped, report_path.name))
+
+    setup_skips = getattr(session.config, "_md_setup_skips", 0)
+    totals = {
+        "passed":  sum(1 for r in results if r["outcome"] == "passed"  and not r.get("wasxfail")),
+        "failed":  sum(1 for r in results if r["outcome"] == "failed"),
+        "xfail":   sum(1 for r in results if r["outcome"] == "skipped" and     r.get("wasxfail")),
+        "xpass":   sum(1 for r in results if r["outcome"] == "passed"  and     r.get("wasxfail")),
+        "skipped": sum(1 for r in results if r["outcome"] == "skipped" and not r.get("wasxfail")) + setup_skips,
+    }
+    totals["total"] = sum(totals.values())
 
     summary_path = run_dir / "_summary.md"
-    summary_path.write_text(_render_summary(rid, now_str, mode, summary_rows), encoding="utf-8")
+    summary_path.write_text(_render_summary(rid, now_str, mode, summary_rows, totals), encoding="utf-8")
+
+
+def _md_cell(text: str, limit: int = 160) -> str:
+    """表格儲存格安全化：去換行、跳脫直線、截長。"""
+    t = " ".join(str(text).split()).replace("|", "\\|")
+    return t[:limit] + ("…" if len(t) > limit else "")
+
+
+def _skip_reason(x: dict) -> str:
+    """從 longrepr 取 skip 理由（格式 ('file', line, 'Skipped: <理由>')）。"""
+    m = re.search(r"Skipped:?\s*(.+?)['\")]*$", x.get("longrepr", ""))
+    return m.group(1) if m else x.get("longrepr", "")
+
+
+def _explain(x: dict) -> str:
+    """非 PASS 狀態的說明：xfail=原因、skipped=理由、failed=預期+實際。PASS 免說明。"""
+    if x["outcome"] == "failed":
+        return _md_cell(f"預期：{x.get('expected') or '（未提供）'}；實際：{x.get('actual') or '（未提供）'}")
+    if x.get("wasxfail"):
+        return _md_cell(f"xfail：{x.get('xfail_reason') or '（未註明原因）'}")
+    if x["outcome"] == "skipped":
+        return _md_cell(f"skip：{_skip_reason(x) or '（未註明理由）'}")
+    return "—"
 
 
 def _render_one(wbs: str, title: str, items: list, now_str: str, mode: str) -> str:
-    passed = sum(1 for x in items if x["outcome"] == "passed")
-    failed = sum(1 for x in items if x["outcome"] == "failed")
-    skipped = sum(1 for x in items if x["outcome"] == "skipped")
+    passed  = sum(1 for x in items if x["outcome"] == "passed"  and not x.get("wasxfail"))
+    failed  = sum(1 for x in items if x["outcome"] == "failed")
+    xfail   = sum(1 for x in items if x["outcome"] == "skipped" and     x.get("wasxfail"))
+    skipped = sum(1 for x in items if x["outcome"] == "skipped" and not x.get("wasxfail"))
 
     lines: list[str] = []
     lines.append(f"# 測試報告：{title}")
@@ -164,17 +212,34 @@ def _render_one(wbs: str, title: str, items: list, now_str: str, mode: str) -> s
     lines.append(f"- 工項編號：**{wbs}**")
     lines.append(f"- 執行時間：**{now_str}**")
     lines.append(f"- 截圖模式：`{mode}`")
-    lines.append(f"- 結果：✅ {passed} ／ ❌ {failed} ／ ⏭ {skipped}")
+    parts = [f"✅ {passed}", f"❌ {failed}"]
+    if xfail:
+        parts.append(f"⚠ xfail {xfail}")
+    if skipped:
+        parts.append(f"⏭ {skipped}")
+    lines.append(f"- 結果：{' ／ '.join(parts)}")
     lines.append("")
 
+    spec_req = load_spec_requirements(wbs)
+    if spec_req:
+        lines.append("## 測試規格要求（對照）")
+        lines.append("")
+        lines.append(spec_req)
+        lines.append("")
+
     lines.append("## 總覽")
-    lines.append("| # | 案例 | 結果 | 耗時 | 截圖 |")
-    lines.append("|---|------|------|------|------|")
+    lines.append("| # | 案例 | 結果 | 耗時 | 截圖 | 說明（非 PASS 必填） |")
+    lines.append("|---|------|------|------|------|------|")
     for i, x in enumerate(items, 1):
-        icon = {"passed": "✅", "failed": "❌", "skipped": "⏭"}.get(x["outcome"], "?")
-        shot_cell = f"[圖]({x['shot']})" if x.get("shot") else "—"
+        if x.get("wasxfail"):
+            status = "⚠ xfail"
+        else:
+            icon = {"passed": "✅", "failed": "❌", "skipped": "⏭"}.get(x["outcome"], "?")
+            status = f"{icon} {x['outcome']}"
+        pure_skip = x["outcome"] == "skipped" and not x.get("wasxfail")
+        shot_cell = f"[圖]({x['shot']})" if x.get("shot") and not pure_skip else "—"
         lines.append(
-            f"| {i} | {x['title']} | {icon} {x['outcome']} | {x['duration']:.2f}s | {shot_cell} |"
+            f"| {i} | {x['title']} | {status} | {x['duration']:.2f}s | {shot_cell} | {_explain(x)} |"
         )
     lines.append("")
 
@@ -198,33 +263,60 @@ def _render_one(wbs: str, title: str, items: list, now_str: str, mode: str) -> s
             lines.append("```")
 
     if mode == "always":
-        with_shots = [x for x in items if x.get("shot")]
+        # 純 skip（非 xfail）從未執行操作，截圖必為空白頁 → 不列截圖區（總覽表已附理由）
+        with_shots = [x for x in items if x.get("shot")
+                      and (x["outcome"] != "skipped" or x.get("wasxfail"))]
         if with_shots:
             lines.append("")
             lines.append("## 結果截圖")
             for i, x in enumerate(with_shots, 1):
-                icon = {"passed": "✅", "failed": "❌", "skipped": "⏭"}.get(x["outcome"], "?")
+                if x.get("wasxfail"):
+                    icon = "⚠ xfail"
+                else:
+                    icon = {"passed": "✅", "failed": "❌", "skipped": "⏭"}.get(x["outcome"], "?")
                 lines.append("")
                 lines.append(f"### {i}. {x['name']} {icon}")
+                lines.append(f"- 案例：{x['title']}")
+                lines.append(f"- 預期：{x.get('expected') or '（未提供）'}")
+                lines.append(f"- 實際：{x.get('actual') or '（未提供）'}")
+                if x["outcome"] != "passed" or x.get("wasxfail"):
+                    lines.append(f"- 說明：{_explain(x)}")
+                lines.append("")
                 lines.append(f"![{x['name']}]({x['shot']})")
 
     lines.append("")
     return "\n".join(lines)
 
 
-def _render_summary(rid: str, now_str: str, mode: str, rows: list) -> str:
+def _render_summary(rid: str, now_str: str, mode: str, rows: list, totals: dict) -> str:
+    total = totals["total"]
+
+    def pct(n: int) -> str:
+        return f"{n / total * 100:.1f}%" if total else "0%"
+
     out = [
         f"# Run {rid}",
         "",
         f"- 執行時間：**{now_str}**",
         f"- 截圖模式：`{mode}`",
         "",
+        "## 整體結果",
+        "",
+        "| 狀態 | 數量 | 佔比 |",
+        "|------|-----:|-----:|",
+        f"| **合計** | **{total}** | 100% |",
+        f"| ✅ PASSED  | {totals['passed']}  | {pct(totals['passed'])} |",
+        f"| ❌ FAILED  | {totals['failed']}  | {pct(totals['failed'])} |",
+        f"| ⚠ XFAIL   | {totals['xfail']}   | {pct(totals['xfail'])} |",
+        f"| ⬆ XPASS   | {totals['xpass']}   | {pct(totals['xpass'])} |",
+        f"| ⏭ SKIPPED | {totals['skipped']} | {pct(totals['skipped'])} |",
+        "",
         "## 工項彙總",
     ]
-    out.append("| 工項 | 標題 | ✅ | ❌ | ⏭ | 報告 |")
-    out.append("|------|------|----|----|----|------|")
-    for wbs, title, p, f, s, fname in rows:
-        out.append(f"| {wbs} | {title} | {p} | {f} | {s} | [{fname}]({fname}) |")
+    out.append("| 工項 | 標題 | ✅ | ❌ | ⚠ XF | ⏭ | 報告 |")
+    out.append("|------|------|----|----|-------|----|----|")
+    for wbs, title, p, f, xf, s, fname in rows:
+        out.append(f"| {wbs} | {title} | {p} | {f} | {xf} | {s} | [{fname}]({fname}) |")
     out.append("")
     return "\n".join(out)
 
@@ -236,8 +328,7 @@ def _safe_filename(name: str) -> str:
     return name.strip()
 
 
-def _try_load_wbs_title(wbs: str) -> str | None:
-    """從 specs/<父>/<工項>.md 取標題第一行 H1，作為報告檔名與標題。"""
+def _find_spec_file(wbs: str) -> Path | None:
     if "-" not in wbs:
         return None
     specs_dir = PROJECT_ROOT / "specs"
@@ -249,5 +340,32 @@ def _try_load_wbs_title(wbs: str) -> str | None:
             continue
         for f in parent.iterdir():
             if f.is_file() and f.name.startswith(target_prefix) and f.suffix == ".md":
-                return f.stem
+                return f
     return None
+
+
+def _try_load_wbs_title(wbs: str) -> str | None:
+    """從 specs/<父>/<工項>.md 取標題第一行 H1，作為報告檔名與標題。"""
+    f = _find_spec_file(wbs)
+    return f.stem if f else None
+
+
+def load_spec_requirements(wbs: str) -> str | None:
+    """從 spec 檔抽「規則」引言與「驗收條件 (AC)」清單，供報告對照規格要求。"""
+    f = _find_spec_file(wbs)
+    if f is None:
+        return None
+    text = f.read_text(encoding="utf-8")
+    parts: list[str] = []
+    # H1 後的 blockquote（> 規則：…）
+    m = re.search(r"^# .+?\n+((?:^>.*\n?)+)", text, re.M)
+    if m:
+        parts.append(m.group(1).rstrip())
+    # 驗收條件段（優先 AI-MANAGED 標界，否則取 heading 到下一個 ## 為止）
+    m = re.search(r"<!-- AI-MANAGED START: acceptance-criteria -->\n(.*?)<!-- AI-MANAGED END",
+                  text, re.S)
+    if not m:
+        m = re.search(r"^## 驗收條件.*?\n(.*?)(?=^## |\Z)", text, re.M | re.S)
+    if m:
+        parts.append("**驗收條件 (AC)**\n" + m.group(1).strip())
+    return "\n\n".join(parts) if parts else None

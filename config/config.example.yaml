@@ -1,8 +1,21 @@
-# 複製此檔成 config.local.yaml 後填入真實值。
-# config.local.yaml 已在 .gitignore，不會被提交。
+# 複製此檔成 config.<env>.yaml 後填入真實值。
+# 支援多環境：config.dev.yaml / config.test.yaml / config.prod.yaml / config.local.yaml
+# 所有含帳密的設定檔均在 .gitignore，不會被提交。
+#
+# 環境切替方式（擇一）：
+#   PowerShell：$env:TEST_ENV = "test"; .\scripts\run_full.ps1
+#   pytest CLI：pytest --env test tests/
+#   預設（無設定）：讀 config.local.yaml
+#
+# 合併規則：
+#   - local 模式：只讀 config.local.yaml
+#   - 非 local 模式（dev/test/prod）：只讀 config.<env>.yaml，互不影響
 
-base_url: https://<受測站 host>   # 例：https://test.example.com
+base_url: https://<受測站 host>   # 例：https://qa-khcg-ai.foxconn.com
 entry_path: /entry/login
+
+# 直連活動編輯頁用的 pkid（任一有效活動即可，用於 EVEventEdit 相關測試）
+event_edit_pkid: "REPLACE_ME"
 
 # 登入後預期會跳轉到的頁面 URL（用於判定登入成功）
 # Playwright glob：** 匹配任意（含 /），* 匹配除 / 外任意
@@ -12,14 +25,26 @@ accounts:
   admin:
     username: REPLACE_ME
     password: REPLACE_ME
+  citizen:                          # 公民帳號（整合測試 Phase 4/5 用；未填則 xfail）
+    username: REPLACE_ME
+    password: REPLACE_ME
+
+# 公民端獨立登入頁路徑（與後台 entry_path 不同）
+citizen_entry_path: /REPLACE_ME
+
+# 前台所有活動頁路徑（1-2-1 工項 + 整合測試 Phase 3 用）
+all_activities_path: /REPLACE_ME
 
 captcha:
-  # manual : 跳出 Playwright Inspector 等人工輸入後 Resume
+  # manual : 開瀏覽器等人工輸入驗證碼 + 點登入（開發時用）
+  # ocr    : ddddocr 離線辨識圖形驗證碼，失敗自動 reload 重試（夜間排程無人值守用）
   # bypass : 直接帶入 test_code（需後端支援）
   # reuse  : 不輸入，僅靠 storageState 重用 session（過期會失敗）
   mode: manual
   # 若 mode=bypass，這裡填測試環境的固定通關碼
   test_code: ""
+  # 若 mode=ocr，辨識失敗最多重試幾次（每次 reload 換新驗證碼）
+  ocr_max_retry: 5
   # storageState 視為新鮮的最大時長（分鐘）
   session_max_age_min: 30
 

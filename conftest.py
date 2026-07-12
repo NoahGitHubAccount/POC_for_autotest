@@ -13,9 +13,46 @@ from lib.config_loader import load_config
 pytest_plugins = ("lib.md_reporter",)
 
 
+def pytest_addoption(parser):
+    parser.addoption("--env", default=None, help="目標環境：dev | test | prod | local（預設讀 TEST_ENV 環境變數）")
+    parser.addoption("--include-frozen", action="store_true", default=False,
+                     help="連已定版（凍結）案例一起跑（回歸用；預設凍結案例自動跳過）")
+
+
+def _load_frozen_nodeids() -> set[str]:
+    """讀取定版凍結清單（reports/final/frozen_tests.txt，# 開頭為註解）。"""
+    from pathlib import Path
+    frozen_file = Path(__file__).parent / "reports" / "final" / "frozen_tests.txt"
+    if not frozen_file.exists():
+        return set()
+    return {
+        line.strip()
+        for line in frozen_file.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    }
+
+
+def pytest_collection_modifyitems(config, items):
+    """已定版案例自動 deselect（見 STATUS_整合測試.md 定版流程）；--include-frozen 可強制全跑。"""
+    if config.getoption("--include-frozen"):
+        return
+    frozen = _load_frozen_nodeids()
+    if not frozen:
+        return
+    kept, dropped = [], []
+    for item in items:
+        # nodeid 可能帶參數尾碼 [chromium]，凍結清單存「不含參數」形式，前綴比對
+        base = item.nodeid.split("[", 1)[0]
+        (dropped if base in frozen else kept).append(item)
+    if dropped:
+        config.hook.pytest_deselected(items=dropped)
+        items[:] = kept
+
+
 @pytest.fixture(scope="session")
-def config() -> dict:
-    return load_config()
+def config(request) -> dict:
+    env = request.config.getoption("--env") or None
+    return load_config(env=env)
 
 
 @pytest.fixture(scope="session")

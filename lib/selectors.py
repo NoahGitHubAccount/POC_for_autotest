@@ -111,6 +111,11 @@ class EventListPage:
         return EventListPage.action_cell(row).locator(f"div > div:nth-child({group})")
 
     @staticmethod
+    def create_button(page: Page) -> Locator:
+        """活動列表頁「新增」按鈕（aria-label="新增"，DOM 事實：2026-05-20 dump）。"""
+        return page.get_by_role("button", name="新增", exact=True)
+
+    @staticmethod
     def menu_item_by_text(page: Page, text: str) -> Locator:
         """展開 menu 後的選項，依文字命中。"""
         return page.get_by_role("menuitem", name=text).or_(
@@ -208,18 +213,30 @@ class EVEventEditPage:
         ).first
 
     @staticmethod
+    def field_datepicker_input(page: Page, field_id: str) -> Locator:
+        """依 data-field-id 找 datepicker 內的 input（不依賴 label 文字，結構穩定）。"""
+        return page.locator(f"[data-field-id='{field_id}'] input.p-datepicker-input").first
+
+    @staticmethod
     def start_time_input(page: Page) -> Locator:
-        return EVEventEditPage.date_input_by_label(page, "活動開始時間")
+        return EVEventEditPage.field_datepicker_input(page, "ActivityInfo_Introduction_startTime")
 
     @staticmethod
     def end_time_input(page: Page) -> Locator:
-        return EVEventEditPage.date_input_by_label(page, "活動結束時間")
+        return EVEventEditPage.field_datepicker_input(page, "ActivityInfo_Introduction_endTime")
 
     @staticmethod
     def save_button(page: Page) -> Locator:
         return page.get_by_role("button", name="儲存").or_(
             page.get_by_role("button", name="確認修改")
         ).first
+
+    @staticmethod
+    def open_direct(page: Page, base_url: str, pkid: str) -> None:
+        """直連 EVEventEdit 頁（用 config['event_edit_pkid']）。比從列表點入快且穩定。"""
+        url = f"{base_url}/entry/EVEventEdit/source=EVEvent&pkid={pkid}"
+        page.goto(url, wait_until="domcontentloaded", timeout=30000)
+        page.wait_for_timeout(2000)
 
     @staticmethod
     def open_from_event_list(page: Page, base_url: str) -> None:
@@ -234,11 +251,76 @@ class EVEventEditPage:
         page.wait_for_timeout(2000)
 
     @staticmethod
-    def section_header(page: Page, title: str) -> Locator:
-        """依 section 標題文字找對應的 panel header。"""
-        return page.get_by_text(title, exact=True).first
+    def field_container(page: Page, field_id: str) -> Locator:
+        """依 data-field-id 找欄位容器（EVEventEdit 每個欄位的唯一穩定錨點）。"""
+        return page.locator(f"[data-field-id='{field_id}']")
 
     @staticmethod
-    def field_label(page: Page, label_text: str) -> Locator:
-        """依 label 文字找表單欄位 label。"""
-        return page.get_by_text(label_text, exact=True).first
+    def field_label(page: Page, field_id: str) -> Locator:
+        """依 data-field-id 找欄位主 label（容許前綴 * 必填符號）。
+        用 .first 避免 radiobutton/checkbox 子選項 label 觸發 strict mode。"""
+        return page.locator(f"[data-field-id='{field_id}'] label").first
+
+    @staticmethod
+    def field_component(page: Page, field_id: str, pc_name: str) -> Locator:
+        """依 data-field-id + data-pc-name 找欄位內的 PrimeVue 元件。"""
+        return page.locator(f"[data-field-id='{field_id}'] [data-pc-name='{pc_name}']").first
+
+    @staticmethod
+    def section_header(page: Page, title: str) -> Locator:
+        """找 EVEventEdit 頁的 section header，依標題文字定位。
+        DOM 事實（2026-05-18 HTML dump）：
+          <div data-anchor="ActivityMgmt_ActivityInfo" ...>
+            <div class="text-h3 ...">活動資訊</div>  ← 直接子 div，純文字，非 heading 元素
+          </div>
+        用 [data-anchor] > div + has_text 定位，不依賴 Tailwind class 或 heading role。
+        """
+        return page.locator("[data-anchor] > div").filter(has_text=title).first
+
+
+class CitizenLoginPage:
+    """公民端獨立登入頁（路徑由 config.citizen_entry_path 決定）。
+
+    注意：公民端登入入口與後台 /entry/login 不同，路徑待確認後填入 config。
+    selector 暫以 placeholder 為主（與後台登入頁同名元件，待 HTML dump 後修正）。
+    """
+
+    @staticmethod
+    def open(page: Page, base_url: str, citizen_entry_path: str) -> None:
+        page.goto(base_url + citizen_entry_path, wait_until="domcontentloaded")
+
+    @staticmethod
+    def username_input(page: Page) -> Locator:
+        return page.get_by_placeholder("請輸入帳號")
+
+    @staticmethod
+    def password_input(page: Page) -> Locator:
+        return page.get_by_placeholder("請輸入密碼")
+
+    @staticmethod
+    def submit_button(page: Page) -> Locator:
+        return page.get_by_role("button", name="登入")
+
+
+class CitizenRegistrationPage:
+    """前台活動報名頁（/ActivityInfo?evMainEventId=...&evEventId=...）。
+
+    selector 暫以語意猜測為主；待實際 HTML dump 後對照修正。
+    """
+
+    PATH_TEMPLATE = "/ActivityInfo?evMainEventId={main_id}&evEventId={event_id}"
+
+    @staticmethod
+    def privacy_agree_button(page: Page) -> Locator:
+        """個資使用聲明同意彈窗「同意」按鈕。"""
+        return page.get_by_role("button", name="同意")
+
+    @staticmethod
+    def submit_button(page: Page) -> Locator:
+        """報名表單送出按鈕。"""
+        return page.get_by_role("button", name="送出")
+
+    @staticmethod
+    def activity_title(page: Page) -> Locator:
+        """頁面顯示的活動標題（用於驗證頁面對應正確活動）。"""
+        return page.locator("h1, h2").first

@@ -6,8 +6,11 @@ venv/
 *.egg-info/
 .pytest_cache/
 
-# 設定檔（含真實帳密）
+# 設定檔（含真實帳密；多環境全部 gitignore，只有 example 進版控）
 config/config.local.yaml
+config/config.dev.yaml
+config/config.test.yaml
+config/config.prod.yaml
 
 # 登入態（含 cookies/storageState）
 .auth/
@@ -35,10 +38,18 @@ src/
 
 # 暫存檔
 .tmp_*
+/tmp*.txt
+/*_out.txt
 
 # Debug 產出物
 debug_filter.png
 debug_*.png
+
+# 一次性診斷產物（正式探測工具為 tools/dom_probe.py；歷史 diag 腳本歸檔於 _archive）
+tools/_diag_*
+tools/_tmp_*
+tools/_session*.html
+tools/_archive/
 
 # 第三方業務文件（PDF；公開 repo 不帶，本機保留）
 *.pdf

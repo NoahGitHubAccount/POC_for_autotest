@@ -40,11 +40,16 @@ def perform_interactive_login(page: Page, config: dict, role: str = DEFAULT_ROLE
     cap = config["captcha"]
     post_login = config["post_login_url_glob"]
 
+    mode = cap["mode"]
+    if mode == "ocr":
+        # 無人值守模式：ddddocr 辨識圖形驗證碼，失敗 reload 重試
+        _perform_ocr_login(page, config, role)
+        return
+
     page.goto(base_url + entry_path)
     page.get_by_placeholder("請輸入帳號").fill(acc["username"])
     page.get_by_placeholder("請輸入密碼").fill(acc["password"])
 
-    mode = cap["mode"]
     if mode == "bypass":
         page.get_by_placeholder("請輸入驗證碼").fill(cap.get("test_code", ""))
         page.get_by_role("button", name="登入").click()
@@ -63,6 +68,49 @@ def perform_interactive_login(page: Page, config: dict, role: str = DEFAULT_ROLE
         raise ValueError(f"未知 captcha.mode={mode}")
 
     page.wait_for_url(post_login, timeout=300_000)
+
+
+def _read_captcha_code(page: Page) -> str:
+    """OCR 讀取圖形驗證碼（ddddocr，離線 ONNX 推論）。
+
+    DOM 事實（2026-07-08 dom_probe 確認）：
+    驗證碼圖是登入頁唯一的 `img[src^='data:image/png']`（base64 PNG），
+    直接解 src 的 base64 取原圖，不走 screenshot（避免縮放失真）。
+    """
+    import base64
+
+    import ddddocr  # lazy import：未裝 ddddocr 時 manual/bypass 模式不受影響
+
+    src = page.locator("img[src^='data:image/png']").first.get_attribute("src")
+    png = base64.b64decode(src.split(",", 1)[1])
+    return ddddocr.DdddOcr(show_ad=False).classification(png).strip()
+
+
+def _perform_ocr_login(page: Page, config: dict, role: str = DEFAULT_ROLE) -> None:
+    """OCR 自動登入：辨識→填入→登入；失敗 reload 換新驗證碼重試（供夜間排程無人值守）。"""
+    acc = config["accounts"][role]
+    base_url = config["base_url"]
+    entry_path = config["entry_path"]
+    post_login = config["post_login_url_glob"]
+    max_retry = config["captcha"].get("ocr_max_retry", 5)
+
+    page.goto(base_url + entry_path)
+    for attempt in range(1, max_retry + 1):
+        page.get_by_placeholder("請輸入帳號").fill(acc["username"])
+        page.get_by_placeholder("請輸入密碼").fill(acc["password"])
+        code = _read_captcha_code(page)
+        print(f"[OCR] 第 {attempt}/{max_retry} 次：辨識驗證碼 = {code!r}")
+        page.get_by_placeholder("請輸入驗證碼").fill(code)
+        page.get_by_role("button", name="登入").click()
+        try:
+            page.wait_for_url(post_login, timeout=10_000)
+            return
+        except Exception:
+            # 辨識錯誤或驗證碼失效：reload 取新驗證碼（避免依賴「換一張」icon 的不穩定 selector）
+            page.reload(wait_until="domcontentloaded")
+            page.wait_for_timeout(800)
+
+    raise RuntimeError(f"OCR 登入 {max_retry} 次皆失敗，請改 captcha.mode=manual 人工登入")
 
 
 def save_storage_state(context: BrowserContext, role: str = DEFAULT_ROLE) -> Path:
