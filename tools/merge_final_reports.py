@@ -74,6 +74,8 @@ def _build(base: Path, out_path: Path, title: str, scope: str, date_label: str) 
     sections: list[str] = []
     for md in ledgers:
         rows = _parse_rows(md.read_text(encoding="utf-8"))
+        # 列順序＝先 pass/xfail 分組再案例（使用者閱讀習慣）：PASS 前、xfail/其他 後，組內維持台帳順序
+        rows.sort(key=lambda r: 0 if "✅" in r["status"] else 1)
         p = sum(1 for r in rows if "✅" in r["status"])
         xf = sum(1 for r in rows if "xfail" in r["status"])
         other = len(rows) - p - xf
