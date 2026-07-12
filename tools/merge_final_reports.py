@@ -104,7 +104,7 @@ def _build(base: Path, out_path: Path, title: str, scope: str, date_label: str) 
                 rel = r["shot"].replace("./screenshots/", f"./{md.parent.name}/screenshots/")
                 rel = quote(rel, safe="/.")  # 空格與 [] 需 URL 編碼，否則多數渲染器不顯示
                 sec.append("")
-                sec.append(f"![{r['func']}]({rel})")
+                sec.append(f"![case{r['n']}]({rel})")  # alt 短 ASCII（長中文 alt 會破格）
             else:
                 sec.append("- （無截圖）")
         sections.append("\n".join(sec))
@@ -125,7 +125,8 @@ def _case_block(r: dict, ledger_dir_name: str, idx: int, wbs: str) -> list[str]:
     if r["shot"]:
         rel = r["shot"].replace("./screenshots/", f"./{ledger_dir_name}/screenshots/")
         rel = quote(rel, safe="/.")  # 空格與 [] 需 URL 編碼，否則多數渲染器不顯示
-        sec += ["", f"![{r['func']}]({rel})"]
+        # alt 一律短 ASCII：含中文/底線的長 alt 會讓部分檢視器解析破格（2026-07-12 A/B 實測）
+        sec += ["", f"![case{idx}]({rel})"]
     else:
         sec.append("- （無截圖）")
     return sec

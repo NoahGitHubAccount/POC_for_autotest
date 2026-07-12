@@ -93,6 +93,8 @@ def _take_screenshot(item, outcome_str: str, run_dir: Path) -> str | None:
     fname = _safe_filename(f"{_wbs_of(item)}__{item.name}.png")
     target = shots_dir / fname
     try:
+        # full_page：多點證據（如整頁必填紅字）需整頁截圖。長圖顯示異常已排除
+        # ＝彙整報告 alt 文字問題非圖片本身（2026-07-12 A/B 實測），勿改 viewport。
         page.screenshot(path=str(target), full_page=True)
     except Exception:
         return None
