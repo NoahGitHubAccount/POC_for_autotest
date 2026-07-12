@@ -110,9 +110,12 @@ def snap_page(item, page, label: str) -> str | None:
     run_dir = _run_dir(item.session)
     shots_dir = run_dir / "screenshots"
     shots_dir.mkdir(parents=True, exist_ok=True)
+    # label 消毒：+ % # ? & = 空格等符號會讓檢視器解析圖片路徑失敗（2026-07-13 使用者回報 + 案例）
+    label = re.sub(r"[+%#?&=\s]", "_", label)
     fname = _safe_filename(f"{_wbs_of(item)}__{item.name}__{label}.png")
     try:
-        page.screenshot(path=str(shots_dir / fname), full_page=True)
+        # snap＝「當下畫面」一屏（呼叫端先捲到目標）；整頁證據由案末主圖（full_page）負責
+        page.screenshot(path=str(shots_dir / fname), full_page=False)
     except Exception:
         return None
     rel = f"./screenshots/{fname}"

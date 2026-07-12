@@ -46,6 +46,13 @@
 
 ## 決議紀錄（最新在上）
 
+- **2026-07-13 XXIV** — **第二輪審查退件處理＋新缺陷 ISS-018**：
+  - [V] 凍結 +3（IT-01 ac4、IT-11 ac2、IT-12 ac4）→ 凍結累計 91 案；待審 18 案（3P/15XF）。
+  - **ISS-018（使用者退件引出的真缺陷）**：憑證頁「報到時間/報到地點」被「查看活動簡介」按鈕版面重疊遮擋——報到地點 DOM 存在但人眼不可見（elementFromPoint 命中按鈕）；IT-12 ac1 改 xfail 佐證、斷言改「可見為準」。
+  - **假 xfail 事故**（教訓入 99 經驗）：xfail(strict=False) 把 citizen session 過期的 timeout 吞成 xfail（IT-11 ac3/ac4 圖文不符被使用者抓到）——前置 guard 一律 pytest.skip；已用活 session 真跑補正（送出前後兩圖含格式錯誤紅字證據）。
+  - **截圖檔名鐵律**：台帳/彙整報告截圖一律 `IT-xx_acN_k.png` 純 ASCII（Obsidian 解析長中文/`[]`/`+` 檔名失敗）；collect 自動改名＋既有台帳已遷移；snap label 消毒；snap=viewport 一屏、主圖=整頁。
+  - IT-16 ac1 改「改前/改後/後台佐證」三圖 PASS；ac2 曝光下架 PASS；IT-10 ac7 優先度（額滿＋已結束顯示已額滿）xfail=ISS-012 佐證擴充。
+
 - **2026-07-13 XXIII** — **審查退件批全數處理（凍結累計 88 案；待審 19 案）**：
   - 使用者審畢全 33 案：**[V] 14 案已凍結**（IT-09 ac2/3、IT-10 ac1-5、IT-11 ac1、IT-12 ac2/3/6、IT-13 ac1-3）；退件 12 案全數改測/補圖後重跑重收。
   - **一案多圖框架**：md_reporter `snap_page`＋conftest `snap` fixture＋collect/merge 多圖鏈路——跨頁/前後台對照案每畫面各一張（IT-05 ac1/2、IT-11 ac2/3/4、IT-12 ac4、IT-15（4站）、IT-16（前後台）、IT-02 ac4（紅框標記+對照組））。

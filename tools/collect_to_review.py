@@ -135,12 +135,17 @@ def main() -> int:
     for func, c in sorted(cases.items()):
         shot_dst = "—"
         links = []
+        # 台帳截圖一律純 ASCII 短檔名（IT-xx_acN_k.png）：中文/[]/+ 等長檔名
+        # 會讓部分檢視器（Obsidian 等）解析失敗（2026-07-13 使用者回報）
+        m = re.search(r"_(ac\d+[a-z]?)", func)
+        slug = m.group(1) if m else f"c{abs(hash(func)) % 10000}"
         for k, s in enumerate(c.get("shots") or ([c["shot"]] if c["shot"] else []), 1):
             src = run_dir / s.lstrip("./")
             if src.exists():
-                shutil.copy2(src, shots_dir / src.name)
+                dst_name = f"{args.wbs}_{slug}_{k}.png"
+                shutil.copy2(src, shots_dir / dst_name)
                 label = "圖" if k == 1 else f"圖{k}"
-                links.append(f"[{label}](./screenshots/{quote(src.name, safe='.')})")
+                links.append(f"[{label}](./screenshots/{dst_name})")
         if links:
             shot_dst = " ".join(links)
         idx = next((i for i, l in enumerate(lines) if f"`{func}`" in l), None)
