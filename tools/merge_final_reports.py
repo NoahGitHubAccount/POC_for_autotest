@@ -117,17 +117,20 @@ def _build(base: Path, out_path: Path, title: str, scope: str, date_label: str) 
 
 
 def _case_block(r: dict, ledger_dir_name: str, idx: int, wbs: str) -> list[str]:
-    """單一案例的截圖區塊（跨工項扁平視圖用，標題帶工項）。"""
-    sec = ["", f"#### {idx}. [{wbs}] {r['title']} — {r['status']}",
-           f"- 預期：{r['expected']}", f"- 實際：{r['actual']}"]
-    if r["explain"] and r["explain"] != "—":
-        sec.append(f"- 說明：{r['explain']}")
+    """單一案例的截圖區塊（跨工項扁平視圖用，標題帶工項）。
+
+    區塊結構鎖定＝已驗證可顯示的形態（2026-07-12 A/B 實測）：標題→空行→圖→空行→bullets。
+    標題勿用 [方括號]（Markdown 連結語法）、alt 用短 ASCII、圖與標題間勿夾清單。
+    """
+    sec = ["", f"#### {idx}.（{wbs}）{r['title']} — {r['status']}"]
     if r["shot"]:
         rel = r["shot"].replace("./screenshots/", f"./{ledger_dir_name}/screenshots/")
         rel = quote(rel, safe="/.")  # 空格與 [] 需 URL 編碼，否則多數渲染器不顯示
-        # alt 一律短 ASCII：含中文/底線的長 alt 會讓部分檢視器解析破格（2026-07-12 A/B 實測）
         sec += ["", f"![case{idx}]({rel})"]
-    else:
+    sec += ["", f"- 預期：{r['expected']}", f"- 實際：{r['actual']}"]
+    if r["explain"] and r["explain"] != "—":
+        sec.append(f"- 說明：{r['explain']}")
+    if not r["shot"]:
         sec.append("- （無截圖）")
     return sec
 
