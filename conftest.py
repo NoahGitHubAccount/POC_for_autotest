@@ -81,10 +81,14 @@ def browser_type_launch_args(browser_type_launch_args, config):
 
 @pytest.fixture(scope="session")
 def authenticated(config):
-    """確保有有效 session；若無，提示先跑 warm-login 並失敗。"""
+    """確保有有效 session；若無，skip 提示先跑 warm-login。
+
+    用 skip 而非 fail：xfail 標記會把 setup 的 Failed 吞成「假 xfail」
+    （2026-07-13 兩度事故——過期 session 被記成 xfail、圖文不符）；skip 優先權高於 xfail。
+    """
     if not has_fresh_session(DEFAULT_ROLE, config["captcha"]["session_max_age_min"]):
-        pytest.fail(
-            "找不到有效的 session（.auth/admin.json 不存在或已過期）。\n"
+        pytest.skip(
+            "找不到有效的 session（.auth/admin.json 不存在或已過期）。"
             "請先執行：python tools/run.py --warm-login"
         )
     return True
