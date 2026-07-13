@@ -207,84 +207,130 @@ def _build_review_flat(base: Path, out_path: Path) -> bool:
     return True
 
 
-def _build_final_grouped(base: Path, out_path: Path) -> bool:
-    """定版總報告（2026-07-13 使用者指定大綱）：
-    摘要 → PASS（依工項分節：規則說明＋各 AC）→ xfail 集中（跨工項扁平、標籤帶工項）。"""
-    ledgers = sorted(
-        (d / f"{d.name}.md")
-        for d in base.iterdir()
-        if d.is_dir() and (d / f"{d.name}.md").exists()
-    ) if base.exists() else []
-    if not ledgers:
-        print(f"[略過] {base} 下沒有台帳")
+def _build_final_grouped(out_path: Path) -> bool:
+    """整合測試總報告（2026-07-13 使用者指定）：**收錄全部已測案例**（定版＋待審，
+    每案標註審查狀態）——問題單每一條 ISS 都必須有對應案例在報告內。
+    大綱：摘要 → PASS（依工項分節：規則說明＋各 AC）→ xfail 集中（跨工項扁平、標籤帶工項）。"""
+    # 收兩區台帳：同工項的定版與待審列合併（定版在前）
+    by_stem: dict[str, list[tuple[Path, str, dict]]] = {}
+    for base, tag, rel_prefix in ((FINAL, "已定版", "."), (REVIEW, "待審", "../review")):
+        if not base.exists():
+            continue
+        for d in sorted(base.iterdir()):
+            md = d / f"{d.name}.md"
+            if not (d.is_dir() and md.exists()):
+                continue
+            for r in _parse_rows(md.read_text(encoding="utf-8")):
+                r["_tag"] = tag
+                r["_shotdir"] = f"{rel_prefix}/{d.name}/screenshots/"
+                by_stem.setdefault(d.name, []).append((md, tag, r))
+    if not by_stem:
+        print("[略過] final/review 均無台帳")
         return False
 
-    parsed: list[tuple[Path, list[dict]]] = []
     overview: list[str] = []
     tot_p = tot_x = 0
-    for md in ledgers:
-        rows = _parse_rows(md.read_text(encoding="utf-8"))
+    for stem in sorted(by_stem):
+        rows = [r for _m, _t, r in by_stem[stem]]
         p = sum(1 for r in rows if "✅" in r["status"])
         xf = len(rows) - p
+        pending = sum(1 for _m, t, _r in by_stem[stem] if t == "待審")
         tot_p += p
         tot_x += xf
-        overview.append(f"| {md.stem} | {len(rows)} | {p} | {xf} | {max((r['date'] for r in rows), default='—')} |")
-        parsed.append((md, rows))
+        overview.append(f"| {stem} | {len(rows)} | {p} | {xf} | {pending} |")
 
     now = _dt.datetime.now().strftime("%Y-%m-%d %H:%M")
     out: list[str] = [
-        "# 整合測試總報告（定版）",
+        "# 整合測試總報告",
         "",
         f"- 產出時間：**{now}**",
-        f"- 收錄範圍：已審查定版之測試案例，共 {len(ledgers)} 個測試項目、{tot_p + tot_x} 案"
-        f"（✅ 通過 {tot_p}／⚠ 發現問題 {tot_x}）",
+        f"- 收錄範圍：**全部已測案例（已定版＋待審）**，共 {len(by_stem)} 個測試項目、"
+        f"{tot_p + tot_x} 案（✅ 通過 {tot_p}／⚠ 發現問題 {tot_x}）；每案標註審查狀態",
         "",
         "## 摘要",
         "",
-        "| 測試項目 | 案例數 | ✅ 通過 | ⚠ 發現問題(xfail) | 最後定版日 |",
+        "| 測試項目 | 案例數 | ✅ 通過 | ⚠ 發現問題(xfail) | 其中待審 |",
         "|---|---|---|---|---|",
         *overview,
         "",
         "## 一、通過案例（PASS）",
     ]
-    for md, rows in parsed:
-        passes = [r for r in rows if "✅" in r["status"]]
+
+    def _case_shots(r: dict, alt_prefix: str) -> list[str]:
+        sec = []
+        for k, s in enumerate(r.get("shots") or [], 1):
+            rel = quote(s.replace("./screenshots/", r["_shotdir"]), safe="/.")
+            if k > 1:
+                sec += ["", f"（圖{k}）"]
+            sec += ["", f"![{alt_prefix}_{k}]({rel})"]
+        return sec
+
+    for stem in sorted(by_stem):
+        passes = [r for _m, _t, r in by_stem[stem] if "✅" in r["status"]]
         if not passes:
             continue
-        out += ["", f"### {md.stem}", ""]
-        spec_req = load_spec_requirements(md.stem.split(" ")[0])
+        out += ["", f"### {stem}", ""]
+        spec_req = load_spec_requirements(stem.split(" ")[0])
         if spec_req:
             out += ["**規則說明**", "", spec_req, ""]
         for i, r in enumerate(passes, 1):
-            out += ["", f"#### {r['title']} — ✅"]
-            for k, s in enumerate(r.get("shots") or [], 1):
-                rel = quote(s.replace("./screenshots/", f"./{md.parent.name}/screenshots/"), safe="/.")
-                if k > 1:
-                    out += ["", f"（圖{k}）"]
-                out += ["", f"![p{md.stem.split(' ')[0]}_{i}_{k}]({rel})"]
-            out += ["", f"- 預期：{r['expected']}", f"- 實際：{r['actual']}"]
+            out += ["", f"#### {r['title']} — ✅（{r['_tag']}）"]
+            out += _case_shots(r, f"p{stem.split(' ')[0]}_{i}")
+            out += ["", f"- 預期：{r['expected']}", f"- 實際：{r['actual']}",
+                    f"- 審查狀態：{r['_tag']}"]
 
     out += ["", "## 二、發現問題案例（xfail 集中）"]
     n = 0
-    for md, rows in parsed:
-        for r in rows:
+    for stem in sorted(by_stem):
+        for _m, _t, r in by_stem[stem]:
             if "✅" in r["status"]:
                 continue
             n += 1
-            wbs = md.stem.split(" ")[0]
-            out += ["", f"#### {n}.（{wbs}）{r['title']} — {r['status']}"]
-            for k, s in enumerate(r.get("shots") or [], 1):
-                rel = quote(s.replace("./screenshots/", f"./{md.parent.name}/screenshots/"), safe="/.")
-                if k > 1:
-                    out += ["", f"（圖{k}）"]
-                out += ["", f"![x{n}_{k}]({rel})"]
+            wbs = stem.split(" ")[0]
+            out += ["", f"#### {n}.（{wbs}）{r['title']} — {r['status']}（{r['_tag']}）"]
+            out += _case_shots(r, f"x{n}")
             out += ["", f"- 預期：{r['expected']}", f"- 實際：{r['actual']}"]
             if r["explain"] and r["explain"] != "—":
                 out.append(f"- 說明：{r['explain']}")
+            out.append(f"- 審查狀態：{r['_tag']}")
+
+    # 三、問題單全文對照（收錄現行問題單 TSV → 表格，保證問題單每一條都在總報告）
+    issue_file = PROJECT_ROOT / "整合測試_問題單.md"
+    if issue_file.exists():
+        itext = issue_file.read_text(encoding="utf-8")
+        out += ["", "## 三、問題單（現行全文對照）", "",
+                "| # | 類別 | 標題 | 嚴重度 | 描述 | 狀態 |", "|---|---|---|---|---|---|"]
+        m = re.search(r"```tsv\n(.*?)```", itext, re.S)
+        rows_n = 0
+        if m:
+            for ln in m.group(1).splitlines():
+                cells = [c.strip().strip('"') for c in ln.split("\t")]
+                if len(cells) >= 6 and cells[1]:
+                    rows_n += 1
+                    out.append(f"| {rows_n} | {cells[1]} | {cells[2]} | {cells[3]} "
+                               f"| {_md_cell_escape(cells[4])} | {cells[5]} |")
+        cm = re.search(r"（內部追蹤碼對照：(.+?)）", itext, re.S)
+        if cm:
+            out += ["", f"內部追蹤碼對照：{' '.join(cm.group(1).split())}"]
 
     out_path.write_text("\n".join(out) + "\n", encoding="utf-8")
     print(f"已產出：{out_path}")
+
+    # 問題單 ISS 覆蓋核對：每個 ISS-xxx 應在報告內出現
+    if issue_file.exists():
+        report_text = "\n".join(out)
+        listed = set(re.findall(r"ISS-(\d{3})", itext))
+        struck = set(re.findall(r"~~ISS-(\d{3})", itext))
+        missing = sorted(i for i in listed - struck if f"ISS-{i}" not in report_text)
+        if missing:
+            print(f"⚠ 問題單 ISS 未在總報告出現：{['ISS-' + m for m in missing]}（請確認對應案例是否已測/已收）")
+        else:
+            print("✓ 問題單 ISS 全數在總報告（xfail 案例＋問題單對照章節）")
     return True
+
+
+def _md_cell_escape(t: str) -> str:
+    return " ".join(t.split()).replace("|", "\\|")
 
 
 def main() -> int:
@@ -295,8 +341,9 @@ def main() -> int:
     do_final = args.final or not args.review
     do_review = args.review or not args.final
     if do_final:
-        # 定版軌＝交付視角（2026-07-13 使用者指定大綱）：摘要→PASS 依工項→xfail 集中
-        _build_final_grouped(FINAL, FINAL / "整合測試總報告.md")
+        # 總報告＝交付視角（2026-07-13 使用者指定）：收全部已測案例（定版＋待審）
+        # 摘要→PASS 依工項（含規則說明）→xfail 集中；ISS 覆蓋自動核對
+        _build_final_grouped(FINAL / "整合測試總報告.md")
     if do_review:
         # 待審軌＝使用者審查視角：全域 PASS 前、xfail 後（2026-07-12 裁示，勿改回工項分節）
         _build_review_flat(REVIEW, REVIEW / "待審彙整報告.md")
