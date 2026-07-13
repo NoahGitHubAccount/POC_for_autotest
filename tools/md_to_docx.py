@@ -39,7 +39,7 @@ except ImportError:
 
 REPORTS_DIR = PROJECT_ROOT / "reports"
 
-H_RE = re.compile(r"^(#{1,3})\s+(.*)$")
+H_RE = re.compile(r"^(#{1,4})\s+(.*)$")
 TABLE_RE = re.compile(r"^\|(.*)\|\s*$")
 TABLE_SEP_RE = re.compile(r"^\|[\s\-:|]+\|\s*$")
 # 用 greedy `.+`：alt 與 path 都可能含 `[chromium]`（pytest-playwright 標籤），
@@ -107,7 +107,8 @@ def _append_md_to_doc(doc, md_path: Path) -> None:
         m = IMG_RE.match(line)
         if m:
             alt = m.group(1)
-            rel = m.group(2)
+            from urllib.parse import unquote
+            rel = unquote(m.group(2))  # 彙整報告路徑為 URL 編碼（%20/%E5…），先還原
             img_path = (base_dir / rel).resolve()
             if img_path.exists():
                 try:
@@ -204,6 +205,20 @@ def latest_run_id() -> str:
     return sorted(runs)[-1]
 
 
+def convert_file(md_path: Path) -> Path:
+    """單一 md → 同目錄 docx（圖片相對 md 位置解析；供定版/待審彙整報告轉檔）。"""
+    md_path = md_path.resolve()
+    if not md_path.is_file():
+        raise SystemExit(f"找不到 md：{md_path}")
+    doc = Document()
+    print(f"  → 轉換 {md_path.name}")
+    _append_md_to_doc(doc, md_path)
+    out_path = md_path.with_suffix(".docx")
+    doc.save(str(out_path))
+    print(f"\n完成：{out_path}")
+    return out_path
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description="md_reporter 報告整併成單份 docx")
     p.add_argument(
@@ -211,8 +226,12 @@ def main() -> int:
         nargs="?",
         help="run 目錄名（如 20260506_2030 或 20260506_2030_run）；省略則用最新一筆",
     )
+    p.add_argument("--file", help="改轉單一 md 檔（如 reports/final/整合測試總報告.md）")
     args = p.parse_args()
 
+    if args.file:
+        convert_file(Path(args.file))
+        return 0
     run_id = args.run_id or latest_run_id()
     convert_run(run_id)
     return 0

@@ -207,6 +207,86 @@ def _build_review_flat(base: Path, out_path: Path) -> bool:
     return True
 
 
+def _build_final_grouped(base: Path, out_path: Path) -> bool:
+    """定版總報告（2026-07-13 使用者指定大綱）：
+    摘要 → PASS（依工項分節：規則說明＋各 AC）→ xfail 集中（跨工項扁平、標籤帶工項）。"""
+    ledgers = sorted(
+        (d / f"{d.name}.md")
+        for d in base.iterdir()
+        if d.is_dir() and (d / f"{d.name}.md").exists()
+    ) if base.exists() else []
+    if not ledgers:
+        print(f"[略過] {base} 下沒有台帳")
+        return False
+
+    parsed: list[tuple[Path, list[dict]]] = []
+    overview: list[str] = []
+    tot_p = tot_x = 0
+    for md in ledgers:
+        rows = _parse_rows(md.read_text(encoding="utf-8"))
+        p = sum(1 for r in rows if "✅" in r["status"])
+        xf = len(rows) - p
+        tot_p += p
+        tot_x += xf
+        overview.append(f"| {md.stem} | {len(rows)} | {p} | {xf} | {max((r['date'] for r in rows), default='—')} |")
+        parsed.append((md, rows))
+
+    now = _dt.datetime.now().strftime("%Y-%m-%d %H:%M")
+    out: list[str] = [
+        "# 整合測試總報告（定版）",
+        "",
+        f"- 產出時間：**{now}**",
+        f"- 收錄範圍：已審查定版之測試案例，共 {len(ledgers)} 個測試項目、{tot_p + tot_x} 案"
+        f"（✅ 通過 {tot_p}／⚠ 發現問題 {tot_x}）",
+        "",
+        "## 摘要",
+        "",
+        "| 測試項目 | 案例數 | ✅ 通過 | ⚠ 發現問題(xfail) | 最後定版日 |",
+        "|---|---|---|---|---|",
+        *overview,
+        "",
+        "## 一、通過案例（PASS）",
+    ]
+    for md, rows in parsed:
+        passes = [r for r in rows if "✅" in r["status"]]
+        if not passes:
+            continue
+        out += ["", f"### {md.stem}", ""]
+        spec_req = load_spec_requirements(md.stem.split(" ")[0])
+        if spec_req:
+            out += ["**規則說明**", "", spec_req, ""]
+        for i, r in enumerate(passes, 1):
+            out += ["", f"#### {r['title']} — ✅"]
+            for k, s in enumerate(r.get("shots") or [], 1):
+                rel = quote(s.replace("./screenshots/", f"./{md.parent.name}/screenshots/"), safe="/.")
+                if k > 1:
+                    out += ["", f"（圖{k}）"]
+                out += ["", f"![p{md.stem.split(' ')[0]}_{i}_{k}]({rel})"]
+            out += ["", f"- 預期：{r['expected']}", f"- 實際：{r['actual']}"]
+
+    out += ["", "## 二、發現問題案例（xfail 集中）"]
+    n = 0
+    for md, rows in parsed:
+        for r in rows:
+            if "✅" in r["status"]:
+                continue
+            n += 1
+            wbs = md.stem.split(" ")[0]
+            out += ["", f"#### {n}.（{wbs}）{r['title']} — {r['status']}"]
+            for k, s in enumerate(r.get("shots") or [], 1):
+                rel = quote(s.replace("./screenshots/", f"./{md.parent.name}/screenshots/"), safe="/.")
+                if k > 1:
+                    out += ["", f"（圖{k}）"]
+                out += ["", f"![x{n}_{k}]({rel})"]
+            out += ["", f"- 預期：{r['expected']}", f"- 實際：{r['actual']}"]
+            if r["explain"] and r["explain"] != "—":
+                out.append(f"- 說明：{r['explain']}")
+
+    out_path.write_text("\n".join(out) + "\n", encoding="utf-8")
+    print(f"已產出：{out_path}")
+    return True
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--final", action="store_true", help="只產 final 定版總報告")
@@ -215,8 +295,8 @@ def main() -> int:
     do_final = args.final or not args.review
     do_review = args.review or not args.final
     if do_final:
-        _build(FINAL, FINAL / "整合測試總報告.md", "整合測試總報告",
-               "已確認定版之測試案例（持續累積）", "最後定版日")
+        # 定版軌＝交付視角（2026-07-13 使用者指定大綱）：摘要→PASS 依工項→xfail 集中
+        _build_final_grouped(FINAL, FINAL / "整合測試總報告.md")
     if do_review:
         # 待審軌＝使用者審查視角：全域 PASS 前、xfail 後（2026-07-12 裁示，勿改回工項分節）
         _build_review_flat(REVIEW, REVIEW / "待審彙整報告.md")
