@@ -40,6 +40,11 @@ src/
 .tmp_*
 /tmp*.txt
 /*_out.txt
+/scratch_*
+
+# 壓測憑證（真實 JWT，不入版控）
+壓測腳本_JMeter/shared/token.txt
+壓測腳本_JMeter/shared/tokens.csv
 
 # Debug 產出物
 debug_filter.png

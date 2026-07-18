@@ -1,0 +1,26 @@
+==== bat started 07/15 週三 16:14:36.97 ==== 
+bat dir = C:\Workspace\daily-records\專案\FOXCONN\POC_for_autotest\tools\ 
+cwd after cd = C:\Workspace\daily-records\專案\FOXCONN\POC_for_autotest 
+user typed = y 
+python found, running script... 
+start: launching browser...
+goto app (載入活動列表取得 token)...
+querying events...
+got 330 events, computing targets...
+targets to delete = 281
+  ...20/281 (ok=20 fail=0)
+  ...40/281 (ok=40 fail=0)
+  ...60/281 (ok=60 fail=0)
+  ...80/281 (ok=80 fail=0)
+  ...100/281 (ok=100 fail=0)
+  ...120/281 (ok=120 fail=0)
+  ...140/281 (ok=140 fail=0)
+  ...160/281 (ok=160 fail=0)
+  ...180/281 (ok=180 fail=0)
+  ...200/281 (ok=200 fail=0)
+  ...220/281 (ok=220 fail=0)
+  ...240/281 (ok=240 fail=0)
+  ...260/281 (ok=260 fail=0)
+  ...280/281 (ok=280 fail=0)
+DELETE done target=281 ok=281 fail=0
+==== python exit code = 0 ==== 

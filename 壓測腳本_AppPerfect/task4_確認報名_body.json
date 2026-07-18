@@ -1,0 +1,8 @@
+{
+  "evEventEntity": {"key": "34185325523320832"},
+  "evRegistrationDatas": [
+    {"evFormFieldEntity": {"key": "34185325526138880"}, "value": "1"}
+  ],
+  "evEventSessions": [{"key": "34185325525680128"}],
+  "registrationSource": "LoadTest"
+}

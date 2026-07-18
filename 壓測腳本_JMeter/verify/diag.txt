@@ -1,0 +1,8 @@
+診斷時間: 2026-07-14 11:36:16
+1. 規則 id=34185325524500480
+   perPersonTotalLimit(每人總上限) = 1
+   perPersonDailyLimit(每人每日上限) = None
+2. 上限不是0，已PATCH成0 -> HTTP 200
+3. 試報一筆 -> 200 成功 id=34189880908652544
+   結論：已修復，可以重跑壓測
+STATUS: OK
