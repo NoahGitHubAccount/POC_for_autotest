@@ -25,6 +25,8 @@
 | `areaList` | 區域清單 | 有 data-field-id | 2026-05-20 |
 | `sectionList` | 組別清單 | 有 data-field-id | 2026-05-20 |
 | （sessionList） | 場次清單 | **無 data-field-id**，改 `get_by_text` | 2026-05-20 |
+| `sessionNodeName<sfx>` | 場次列-名稱 | 每列有唯一後綴；同列時間欄共用同後綴 | 2026-07-18 |
+| `startTime_<sfx>`/`endTime_<sfx>` | 場次列-起迄時間 | ⚠ 非 `sessionStartTime`（那是 FieldEditRules 鍵非 DOM id）；**收合列不渲染完整欄位**，讀值前先點「場次 N」標頭展開；跨欄配對用名稱欄 data-field-id 後綴 | 2026-07-18 |
 
 ## 元素 tag 陷阱（get_by_role 會永遠 timeout 的元素）
 
