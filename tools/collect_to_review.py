@@ -42,13 +42,25 @@ def _parse_report(md_path: Path) -> dict[str, dict]:
         shot = shots[0] if shots else None
         func = None
         if shot:
-            # 主圖名=<wbs>__<func>[chromium].png；snap 圖名多 __<label> 尾段，主圖必為第一張
-            func = re.sub(r"\[.*?\]\.png$", "", Path(shot).name.split("__", 1)[-1])
+            # 主圖名=<wbs>__<func>[chromium].png；snap 圖名多 __<label> 尾段，主圖必為第一張。
+            # 參數化案例＝<func>[chromium-<param>].png：param 必須保留（否則 N 案坍縮成同一 key
+            # 互相覆蓋，2026-07-30 IT-05 17 案只剩 1 列的教訓）；非參數化維持舊行為（整段剝除）。
+            name = Path(shot).name.split("__", 1)[-1]
+            # PASS ＋ failed_only 模式下不會有主圖，shots[0] 會是 snap 圖
+            # （檔名多一段 `__<label>`）。不先剝掉尾段，func 會變成整串檔名 →
+            # 台帳新增一列垃圾 key 而非更新既有列（2026-08-01 no215 補證時發現）。
+            name = re.sub(r"(\[[^\]]*\])__.+\.png$", r"\1.png", name)
+            func = re.sub(r"\[chromium-([^\]]+)\]\.png$", r"[\1]", name)
+            if func.endswith(".png"):  # 非參數化：[chromium].png 或其他瀏覽器參數
+                func = re.sub(r"\[.*?\]\.png$", "", func)
         if func:
             cases[func] = {"title": title, "status": status, "explain": explain or "—",
                            "shot": shot, "shots": shots, "expected": "—", "actual": "—"}
-    for m in re.finditer(r"^### \d+\. (\S+?)\[[^\]]*\][^\n]*\n(.*?)(?=^### |\Z)", text, re.M | re.S):
-        func, block = m.group(1), m.group(2)
+    for m in re.finditer(r"^### \d+\. (\S+?\[[^\]]*\])[^\n]*\n(.*?)(?=^### |\Z)", text, re.M | re.S):
+        raw, block = m.group(1), m.group(2)
+        # 與上方 shot 檔名同一正規化：參數化保留 param、非參數化剝除 [chromium]
+        func = re.sub(r"\[chromium-([^\]]+)\]$", r"[\1]", raw)
+        func = re.sub(r"\[chromium\]$", "", func)
         if func not in cases:
             continue
         for key, label in (("expected", "預期"), ("actual", "實際")):
@@ -138,7 +150,13 @@ def main() -> int:
         # 台帳截圖一律純 ASCII 短檔名（IT-xx_acN_k.png）：中文/[]/+ 等長檔名
         # 會讓部分檢視器（Obsidian 等）解析失敗（2026-07-13 使用者回報）
         m = re.search(r"_(ac\d+[a-z]?)", func)
-        slug = m.group(1) if m else f"c{abs(hash(func)) % 10000}"
+        if m:
+            slug = m.group(1)
+        else:
+            # 參數化案例用參數 id 當 slug（保持 ASCII：非英數字元轉 _）
+            pm = re.search(r"\[([^\]]+)\]$", func)
+            slug = (re.sub(r"[^A-Za-z0-9.-]", "_", pm.group(1)) if pm
+                    else f"c{abs(hash(func)) % 10000}")
         for k, s in enumerate(c.get("shots") or ([c["shot"]] if c["shot"] else []), 1):
             src = run_dir / s.lstrip("./")
             if src.exists():

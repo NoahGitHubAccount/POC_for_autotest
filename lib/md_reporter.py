@@ -15,6 +15,7 @@ from __future__ import annotations
 import datetime as _dt
 import os
 import re
+import sys
 from pathlib import Path
 
 import pytest
@@ -95,9 +96,19 @@ def _take_screenshot(item, outcome_str: str, run_dir: Path) -> str | None:
     try:
         # full_page：多點證據（如整頁必填紅字）需整頁截圖。長圖顯示異常已排除
         # ＝彙整報告 alt 文字問題非圖片本身（2026-07-12 A/B 實測），勿改 viewport。
-        page.screenshot(path=str(target), full_page=True)
-    except Exception:
-        return None
+        page.screenshot(path=str(target), full_page=True, timeout=20_000)
+    except Exception as e:
+        # 極長頁面（例如展開全部場次卡的 modal）full_page 會逾時。原本直接 return None
+        # ＝該案靜默無圖，審查時只看到「—」卻查不出原因，且 mode=always 下連
+        # 「結果截圖」區（預期／實際的來源）都不會產生（2026-08-01 no215 補證時發現）。
+        # 退一步拍可視區，至少留下證據並把原因印出來。
+        print(f"[md_reporter] full_page 截圖失敗（{type(e).__name__}），改拍可視區：{fname}",
+              file=sys.stderr)
+        try:
+            page.screenshot(path=str(target), full_page=False, timeout=15_000)
+        except Exception as e2:
+            print(f"[md_reporter] 可視區截圖亦失敗（{type(e2).__name__}）：{fname}", file=sys.stderr)
+            return None
     return f"./screenshots/{fname}"
 
 
@@ -148,9 +159,11 @@ def pytest_runtest_makereport(item, call):
             "wbs": _wbs_of(item),
             "nodeid": item.nodeid,
             "name": item.name,
-            "title": (item.function.__doc__ or "").strip().splitlines()[0]
-            if item.function.__doc__
-            else item.name,
+            # 參數化案例可用 `request.node._case_title = "..."` 覆寫列標題
+            # （否則 N 列共用同一句 docstring，審查者無法分辨各列測什麼）
+            "title": getattr(item, "_case_title", None)
+            or ((item.function.__doc__ or "").strip().splitlines()[0]
+                if item.function.__doc__ else item.name),
             "outcome": rep.outcome,
             "wasxfail": bool(getattr(rep, "wasxfail", None)),
             "xfail_reason": str(getattr(rep, "wasxfail", "") or ""),
