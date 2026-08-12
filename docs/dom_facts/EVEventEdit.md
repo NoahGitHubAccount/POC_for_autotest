@@ -87,18 +87,17 @@
 
 - 前端上限屬性 = PageFormItem 的 `Maxlength`（src：`PageFormItem.ts` L62）；InputText 落地為原生 `maxlength`（輸入截斷）+ counter `<n> / <上限>`。
 - 生效欄位（實測截斷）：活動名稱 100、活動時間描述 60、憑證備註文字 100、陪伴者顯示名稱 10。
-- **Editor（Quill）的 Maxlength 設定不生效**：consentContent/checkinNotice 設 300——**鍵盤實打**可輸入第 301 字（排除 fill 繞過事件的疑慮）、Editor 無 counter 顯示、送出也無字數紅字（潛在缺陷，截圖佐證 `reports/20260709_IT03_v7_run/`）。
+- **Editor（Quill）欄位無 counter 元素**：consentContent/checkinNotice 這類 Editor 欄位不呈現字數 counter → 斷言字數上限時不可依賴 counter 文字，須以實際輸入結果為準。
 - Editor 類欄位驗證注意：contenteditable 用 `fill()` 會繞過鍵盤事件；驗「輸入端攔截」須 `press_sequentially()` 實打。截圖證據須在測試結束前把目標欄位 `scroll_into_view`（點儲存後畫面會滾回 Tab1 第一個錯誤欄位）。
-- 無 Maxlength 的文字欄（活動地點/相應網址文字/相應網址/活動介紹等）超量輸入送出無任何字數提示（後端有 MaxLength 但前端無防呆）。
 
 ## 條件欄位事實（2026-07-10 使用者實操側錄驗證）
 
 - **分組子表單（GroupManage）欄位 id 帶動態時間戳尾碼**：實際 `data-field-id` 是 `areaNodeName_1783672074039` 這種格式（`<Id>_<ms timestamp>`），每次新增列都不同 → 定位用前綴 `[data-field-id^='areaNodeName']`，不可寫死。
 - **CheckinTimeRow 自訂模式**：`checkinStartRow`/`checkinEndRow` 選「自訂」後長出獨立欄位 `CertificateManagement_Setting_checkinStartRow-custom` / `…checkinEndRow-custom`（DatePicker）。
-- **PickTable「新增自訂欄位」彈窗**：陪伴者欄位/參與人欄位/憑證顯示資訊/報名者欄位皆有；彈窗內（欄位名稱 InputText、欄位類型 Select、檢核設定 Select、確認鈕）**無 data-field-id**，需文字/角色定位。⚠ **彈窗標題依 PickTable prop 客製**（報名者欄位處實測為「新增報名欄位」而非「新增自訂欄位」）→ 不可用標題定位 dialog；按鈕（label=新增自訂欄位）要鎖定所屬欄位容器內再點，dialog 取 `.p-dialog` 最後開啟者（2026-07-11 IT-03 AC4 教訓）。欄位名稱輸入無 maxlength（後端 200）＝ISS-002 第 8 欄。
+- **PickTable「新增自訂欄位」彈窗**：陪伴者欄位/參與人欄位/憑證顯示資訊/報名者欄位皆有；彈窗內（欄位名稱 InputText、欄位類型 Select、檢核設定 Select、確認鈕）**無 data-field-id**，需文字/角色定位。⚠ **彈窗標題依 PickTable prop 客製**（報名者欄位處實測為「新增報名欄位」而非「新增自訂欄位」）→ 不可用標題定位 dialog；按鈕（label=新增自訂欄位）要鎖定所屬欄位容器內再點，dialog 取 `.p-dialog` 最後開啟者（2026-07-11 IT-03 AC4 教訓）。
 - **憑證備註文字（credentialNote）有預設文案**（「請於報到時出示此憑證…」）→ 同活動名稱，必填空值情境不存在。
 - **同意條款（evPrivacyPolicyEntity）開啟 isPrivacyPolicy 後自動帶預設值「個資使用聲明」**（2026-07-10 AC5a 實測）→ 必填空值情境不存在。
-- **子表單無驗證提示（2026-07-10 dom 探勘更正，推翻先前「卸載說」）**：全域儲存後子表單**仍在 DOM、新增列保留**（切 tab 往返也保留）；但列內必填欄位空值**完全沒有任何提示**——areaList 容器 HTML 零 `p-invalid`/零 `.errorText`/零「必填」字樣，同次儲存他欄有 15 條紅字。前端儲存驗證未涵蓋分組子表單＝產品缺陷 [ISS-004]。
+- **子表單儲存後仍在 DOM（2026-07-10 dom 探勘更正，推翻先前「卸載說」）**：全域儲存後子表單**仍在 DOM、新增列保留**（切 tab 往返也保留）→ 續行定位不需重新展開子表單。
 - 條件展開鏈全數實測確認：isPrivacyPolicy→evPrivacyPolicyEntity；registrationCloseTo=自訂→custom；allowModify→modifyDeadline(+custom)；備註 type=自訂→regButtonRemarkCustom；isGroupingRequired→groupSelectionTiming/groupingBasis；勾 Area/Session/Section→對應 List+子表單；whitelistEnabled→下載/上傳；hasCompanion→companionDisplayName+companionFields；isParticipantDataRequired→participantFields；isConsentRequired→consentContent；needCheckinNotice→checkinNotice；dispatchMode 三選（市民碼/單一/多組）。
 - 側錄原始 log：session scratchpad `record_log.jsonl`（243 事件）；探勘方式＝建一筆「所有條件欄位全部展開」的測試活動並儲存，pkid 記在各專案自己的進度筆記，不寫進本事實庫。
 
