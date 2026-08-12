@@ -4,7 +4,7 @@
 
 | Hook | 腳本 | 說明 |
 |---|---|---|
-| `Stop` | `scripts/check_sync_reminder.ps1` | 每次 Claude 回應結束後，若 aiautotest 有未 commit 變更則顯示 sync 提醒 |
+| `Stop` | `scripts/check_sync_reminder.ps1` | 每次 Claude 回應結束後，若同步目的地 repo 有未 commit 變更則顯示 sync 提醒（目的地路徑由環境變數 `AUTOTEST_COMPANY_REPO` 指定，未設定則不作用） |
 
 設定檔：`.claude/settings.json`
 
@@ -38,5 +38,5 @@
 
 ## 參考
 
-- 全域 settings：`C:\Users\張捷\.claude\settings.json`
+- 全域 settings：`%USERPROFILE%\.claude\settings.json`
 - Skill 文件：`~/.claude/skills/update-config/`、`~/.claude/skills/harness-engineer/references/03-mechanical-enforcement.md`

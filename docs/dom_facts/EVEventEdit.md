@@ -100,7 +100,7 @@
 - **同意條款（evPrivacyPolicyEntity）開啟 isPrivacyPolicy 後自動帶預設值「個資使用聲明」**（2026-07-10 AC5a 實測）→ 必填空值情境不存在。
 - **子表單無驗證提示（2026-07-10 dom 探勘更正，推翻先前「卸載說」）**：全域儲存後子表單**仍在 DOM、新增列保留**（切 tab 往返也保留）；但列內必填欄位空值**完全沒有任何提示**——areaList 容器 HTML 零 `p-invalid`/零 `.errorText`/零「必填」字樣，同次儲存他欄有 15 條紅字。前端儲存驗證未涵蓋分組子表單＝產品缺陷 [ISS-004]。
 - 條件展開鏈全數實測確認：isPrivacyPolicy→evPrivacyPolicyEntity；registrationCloseTo=自訂→custom；allowModify→modifyDeadline(+custom)；備註 type=自訂→regButtonRemarkCustom；isGroupingRequired→groupSelectionTiming/groupingBasis；勾 Area/Session/Section→對應 List+子表單；whitelistEnabled→下載/上傳；hasCompanion→companionDisplayName+companionFields；isParticipantDataRequired→participantFields；isConsentRequired→consentContent；needCheckinNotice→checkinNotice；dispatchMode 三選（市民碼/單一/多組）。
-- 側錄原始 log：session scratchpad `record_log.jsonl`（243 事件）；全開欄位的測試活動 pkid=34168368758263808（已儲存）。
+- 側錄原始 log：session scratchpad `record_log.jsonl`（243 事件）；探勘方式＝建一筆「所有條件欄位全部展開」的測試活動並儲存，pkid 記在各專案自己的進度筆記，不寫進本事實庫。
 
 ## 待確認（探勘後回填）
 

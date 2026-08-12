@@ -2,7 +2,8 @@
 
 執行：
   $env:PYTHONUTF8=1
-  .venv/Scripts/python.exe tools/dump_field_ids.py --base-url https://qa-khcg-ai.foxconn.com
+  # 不帶 --base-url 時讀 config/config.<env>.yaml 的 base_url
+  .venv/Scripts/python.exe tools/dump_field_ids.py --base-url https://<受測站 host>
 """
 from __future__ import annotations
 import argparse, sys

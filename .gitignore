@@ -46,6 +46,14 @@ src/
 壓測腳本_JMeter/shared/token.txt
 壓測腳本_JMeter/shared/tokens.csv
 
+# 壓測執行產物（含真實活動／報名 ID，不入版控）
+壓測腳本_JMeter/reports/
+壓測腳本_JMeter/verify/*.txt
+
+# 清理工具執行紀錄（含真實活動名稱與 pkid）
+tools/delete_run.log
+tools/delete_result.txt
+
 # Debug 產出物
 debug_filter.png
 debug_*.png
@@ -59,12 +67,12 @@ tools/_archive/
 # 第三方業務文件（PDF；公開 repo 不帶，本機保留）
 *.pdf
 
-# 個人進度狀態（Golden 個人筆記，不入團隊共享）
+# 個人進度狀態（個人筆記，不入團隊共享）
 # 若改為團隊共享：移除此行並 git add -f STATUS.md
 STATUS.md
 
 # =============================================
-# 專案成果目錄 — 屬公司版控（aiautotest），不入個人版控
+# 專案成果目錄 — 屬公司版控（<company-repo>），不入個人版控
 # 個人版控只存框架與工程經驗；專案產出透過 sync_to_company.ps1 同步
 # =============================================
 tests/

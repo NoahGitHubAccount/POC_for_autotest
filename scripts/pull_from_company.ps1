@@ -1,17 +1,21 @@
 # pull_from_company.ps1
 #
-# From: aiautotest (company repo) -> POC_for_autotest (local)
+# From: company repo (<company-repo>) -> this repo (local)
 # Conflict: framework files dirty in both repos -> report only, no auto-overwrite
 # Safe copy: tests/ specs/ plan.md (not tracked locally) + framework only dirty in company
+#
+# Company repo path resolution: -CompanyDir > $env:AUTOTEST_COMPANY_REPO > ..\company-repo
 #
 # Usage:
 #   dry-run:  .\scripts\pull_from_company.ps1 -WhatIf
 #   run:      .\scripts\pull_from_company.ps1
+#   custom:   .\scripts\pull_from_company.ps1 -CompanyDir D:\repos\<company-repo>
 #   skip pull:.\scripts\pull_from_company.ps1 -SkipPull
 [CmdletBinding(SupportsShouldProcess)]
 param(
     [string]$LocalDir   = (Split-Path $PSScriptRoot -Parent),
-    [string]$CompanyDir = (Join-Path (Split-Path $PSScriptRoot -Parent) "..\aiautotest"),
+    [string]$CompanyDir = $(if ($env:AUTOTEST_COMPANY_REPO) { $env:AUTOTEST_COMPANY_REPO }
+                            else { Join-Path (Split-Path $PSScriptRoot -Parent) "..\company-repo" }),
     [switch]$SkipPull
 )
 

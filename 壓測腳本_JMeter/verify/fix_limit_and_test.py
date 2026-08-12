@@ -1,14 +1,20 @@
 # -*- coding: utf-8 -*-
 """診斷+修復 T3 報名 400：查活動規則 -> 若每人總上限>0 改成0 -> 試報一筆確認。
-結果寫入本目錄 diag.txt（不含 token）。token 從 ..\\shared\\token.txt 讀取。"""
+結果寫入本目錄 diag.txt（不含 token）。token 從 ..\\shared\\token.txt 讀取。
+
+受測站、活動、表單欄位與場次皆由環境變數帶入（避免真實 ID 進版控）：
+  LOADTEST_BASE_URL / LOADTEST_EVENT_PKID / LOADTEST_FORM_FIELD_PKID / LOADTEST_SESSION_PKID
+"""
 import io, os, json, urllib.request, datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 token = io.open(os.path.join(HERE, "..", "shared", "token.txt"), encoding="utf-8").read().strip()
 H = {"Authorization": "Bearer " + token}
 HJ = {**H, "Content-Type": "application/json"}
-BASE = "https://qa-khcg-ai.foxconn.com"
-EVENT = "34185325523320832"
+BASE = os.environ.get("LOADTEST_BASE_URL", "https://<受測站 host>")
+EVENT = os.environ.get("LOADTEST_EVENT_PKID", "REPLACE_ME")
+FORM_FIELD = os.environ.get("LOADTEST_FORM_FIELD_PKID", "REPLACE_ME")
+SESSION_ID = os.environ.get("LOADTEST_SESSION_PKID", "REPLACE_ME")
 out = io.open(os.path.join(HERE, "diag.txt"), "w", encoding="utf-8")
 def w(s): out.write(s + "\n"); print(s)
 
@@ -40,8 +46,8 @@ try:
     # 試報一筆
     st, body = call("POST", "/reventmodule/Entity/EVRegistration", {
         "evEventEntity": {"key": EVENT},
-        "evRegistrationDatas": [{"evFormFieldEntity": {"key": "34185325526138880"}, "value": "1"}],
-        "evEventSessions": [{"key": "34185325525745666"}],
+        "evRegistrationDatas": [{"evFormFieldEntity": {"key": FORM_FIELD}, "value": "1"}],
+        "evEventSessions": [{"key": SESSION_ID}],
         "registrationSource": "LoadTest"})
     if st == 200:
         w(f"3. 試報一筆 -> 200 成功 id={json.loads(body).get('id')}")

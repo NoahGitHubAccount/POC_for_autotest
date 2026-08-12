@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """查壓測活動的實際報名記錄，結果寫入本目錄 registrations.txt（不含 token）。
-token 從 ..\\shared\\token.txt 讀取。"""
+token 從 ..\\shared\\token.txt 讀取。
+
+受測站與活動由環境變數帶入：LOADTEST_BASE_URL、LOADTEST_EVENT_PKID。
+"""
 import io, os, json, urllib.request, datetime
 from collections import Counter
 
@@ -10,12 +13,13 @@ OUT_PATH = os.path.join(HERE, "registrations.txt")
 
 token = io.open(TOKEN_PATH, encoding="utf-8").read().strip()
 H = {"Authorization": "Bearer " + token}
-EVENT = "34185325523320832"
+BASE = os.environ.get("LOADTEST_BASE_URL", "https://<受測站 host>")
+EVENT = os.environ.get("LOADTEST_EVENT_PKID", "REPLACE_ME")
 
 out = io.open(OUT_PATH, "w", encoding="utf-8")
 out.write("查詢時間: " + datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n")
 try:
-    url = f"https://qa-khcg-ai.foxconn.com/reventmodule/Basic/EVRegistration?eVEventIds={EVENT}&pageRows=999"
+    url = f"{BASE}/reventmodule/Basic/EVRegistration?eVEventIds={EVENT}&pageRows=999"
     with urllib.request.urlopen(urllib.request.Request(url, headers=H), timeout=30) as r:
         data = json.loads(r.read().decode())
     items = data.get("data") or []

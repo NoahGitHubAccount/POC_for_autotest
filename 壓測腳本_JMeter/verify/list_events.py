@@ -1,18 +1,22 @@
 # -*- coding: utf-8 -*-
 """列舉後台所有活動（pkid/名稱/建立者/建立時間/狀態），寫入本目錄 events.txt（不含 token）。
-供人工審查哪些是自動化測試產物、該刪哪些。token 從 ..\\shared\\token.txt 讀取。"""
+供人工審查哪些是自動化測試產物、該刪哪些。token 從 ..\\shared\\token.txt 讀取。
+
+受測站由環境變數 LOADTEST_BASE_URL 帶入；保留清單由 LOADTEST_KEEP_PKIDS（逗號分隔）帶入。
+"""
 import io, os, json, urllib.request, datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 token = io.open(os.path.join(HERE, "..", "shared", "token.txt"), encoding="utf-8").read().strip()
 H = {"Authorization": "Bearer " + token}
-BASE = "https://qa-khcg-ai.foxconn.com"
+BASE = os.environ.get("LOADTEST_BASE_URL", "https://<受測站 host>")
 OUT = os.path.join(HERE, "events.txt")
 
 # 自動化測試命名特徵（僅作標記提示，最終由人工審查）
 import re
-AUTO_HINTS = [r"_copy", r"^IT0?\d", r"^PROBE_", r"^LoadTest_", r"永"]
-KEEP = {"34185325523320832", "34155861376110592", "34168368758263808"}
+AUTO_HINTS = [r"_copy", r"^IT0?\d", r"^PROBE_", r"^LoadTest_"]
+# 不可誤刪的活動 pkid（例如壓測目標活動、生命週期複製來源）；跨專案重用時自行填入
+KEEP = {p for p in os.environ.get("LOADTEST_KEEP_PKIDS", "").split(",") if p.strip()}
 
 def is_auto(name):
     return any(re.search(p, name or "") for p in AUTO_HINTS)

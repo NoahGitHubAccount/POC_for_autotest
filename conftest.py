@@ -33,7 +33,7 @@ def _load_frozen_nodeids() -> set[str]:
 
 
 def pytest_collection_modifyitems(config, items):
-    """已定版案例自動 deselect（見 STATUS_整合測試.md 定版流程）；--include-frozen 可強制全跑。"""
+    """已定版案例自動 deselect（定版清單見 reports/final/frozen_tests.txt）；--include-frozen 可強制全跑。"""
     if config.getoption("--include-frozen"):
         return
     frozen = _load_frozen_nodeids()

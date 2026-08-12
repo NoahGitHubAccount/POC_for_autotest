@@ -1,4 +1,4 @@
-"""擷取三個 QA 活動的欄位資料 + DOM 結構快照。
+"""擷取指定活動的欄位資料 + DOM 結構快照。
 
 用途：
   1. 讀出現有活動的所有欄位值，計算相對日期 offset（供寫自動建立腳本用）
@@ -8,7 +8,7 @@
 執行方式：
   $env:PYTHONUTF8=1
   # 若 config base_url 與目標環境不同，用 --base-url 覆蓋
-  .venv/Scripts/python.exe tools/capture_activity_data.py --base-url https://qa-khcg-ai.foxconn.com
+  .venv/Scripts/python.exe tools/capture_activity_data.py --base-url https://<受測站 host>
 
   # session 過期時腳本會自動開啟登入頁讓你手動輸入驗證碼
 
@@ -39,11 +39,12 @@ from lib.auth import (
 )
 from lib.config_loader import load_config
 
-# ── 三個已知活動的 pkid ──────────────────────────────────────────────────────
+# ── 待擷取活動清單 ───────────────────────────────────────────────────────────
+# 使用前請把 pkid 換成受測站上實際存在的活動；name 僅作輸出檔名標籤。
 CASES = [
-    {"name": "冬日遊樂園", "pkid": "33970176886972416"},
-    {"name": "海洋派對",   "pkid": "33970022155235328"},
-    {"name": "FORMOSA",    "pkid": "33969903970816000"},
+    {"name": "case1", "pkid": "REPLACE_ME"},
+    {"name": "case2", "pkid": "REPLACE_ME"},
+    {"name": "case3", "pkid": "REPLACE_ME"},
 ]
 
 # ── 欄位 ID（對應 data-field-id）────────────────────────────────────────────
@@ -197,11 +198,11 @@ def _ensure_login(browser, base_url: str, cfg: dict) -> object:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="擷取 QA 活動資料 + DOM 快照")
+    parser = argparse.ArgumentParser(description="擷取活動資料 + DOM 快照")
     parser.add_argument(
         "--base-url",
         default=None,
-        help="覆蓋 config 的 base_url（例如 https://qa-khcg-ai.foxconn.com）",
+        help="覆蓋 config 的 base_url（不帶則讀 config/config.<env>.yaml）",
     )
     args = parser.parse_args()
 

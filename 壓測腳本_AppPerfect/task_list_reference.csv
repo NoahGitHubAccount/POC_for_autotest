@@ -1,8 +1,0 @@
-#,Task Name,Method,Host,Path,需帶Header,Body檔案,預期狀態碼
-1,查詢活動內容,GET,qa-khcg-ai.foxconn.com,/reventmodule/Entity/EVEvent?ids=34185325523320832&bindUserData=true,Authorization: Bearer @LOADTEST_TOKEN@,(無),200
-2,查詢活動媒體清單,GET,qa-khcg-ai.foxconn.com,/reventmodule/Basic/EVEventMedia?eVEventIds=34123425668794368,Authorization: Bearer @LOADTEST_TOKEN@,(無),200
-2b,下載封面圖-PC版,GET,qa-citygpt.foxconn.com,/rstorage/Extended/FileResource/34184848693268480,Authorization: Bearer @LOADTEST_TOKEN@,(無),200
-2c,下載封面圖-行動版,GET,qa-citygpt.foxconn.com,/rstorage/Extended/FileResource/34184848895096832,Authorization: Bearer @LOADTEST_TOKEN@,(無),200
-3,查詢報名表單欄位,GET,qa-khcg-ai.foxconn.com,/reventmodule/Basic/EVFormField?eVEventIds=34185325523320832&category=Registration&pageRows=999,Authorization: Bearer @LOADTEST_TOKEN@,(無),200
-4,確認報名(送出),POST,qa-khcg-ai.foxconn.com,/reventmodule/Entity/EVRegistration,"Authorization: Bearer @LOADTEST_TOKEN@ ; Content-Type: application/json",task4_確認報名_body.json,200或201
-5,憑證QR(可選),GET,qa-khcg-ai.foxconn.com,/reventmodule/Fetch/EVTicket/Qrcode/{Task4回應的id},Authorization: Bearer @LOADTEST_TOKEN@,(無),200

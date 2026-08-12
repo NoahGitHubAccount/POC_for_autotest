@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.3">
   <hashTree>
-    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="大港閱兵壓測模型：150用戶/10分鐘" enabled="true">
-      <stringProp name="TestPlan.comments">業主估算模型：1500人/4hr→150併發/10min。三段：取活動內容含圖片(4.1)→取動態表單(4.2)→送出報名(4.3)，含5分鐘操作思考時間</stringProp>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="活動報名壓測模型：150用戶/10分鐘" enabled="true">
+      <stringProp name="TestPlan.comments">客戶估算模型：1500人/4hr→150併發/10min。三段：取活動內容含圖片→取動態表單→送出報名，含5分鐘操作思考時間。受測站與資料 ID 皆以 -J 屬性帶入（HOST/MEDIA_HOST/EVENT_ID/MEDIA_EVENT_ID/BANNER_PC_ID/BANNER_MOBILE_ID/FORM_FIELD_ID/APIM_KEY），預設值 REPLACE_ME</stringProp>
       <boolProp name="TestPlan.functional_mode">false</boolProp>
       <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
       <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
@@ -72,10 +72,10 @@
             <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
               <collectionProp name="Arguments.arguments"/>
             </elementProp>
-            <stringProp name="HTTPSampler.domain">qa-khcg-ai.foxconn.com</stringProp>
+            <stringProp name="HTTPSampler.domain">${__P(HOST,REPLACE_ME)}</stringProp>
             <stringProp name="HTTPSampler.port">443</stringProp>
             <stringProp name="HTTPSampler.protocol">https</stringProp>
-            <stringProp name="HTTPSampler.path">/reventmodule/Entity/EVEvent?ids=34185325523320832&amp;bindUserData=true</stringProp>
+            <stringProp name="HTTPSampler.path">/reventmodule/Entity/EVEvent?ids=${__P(EVENT_ID,REPLACE_ME)}&amp;bindUserData=true</stringProp>
             <stringProp name="HTTPSampler.method">GET</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -89,10 +89,10 @@
             <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
               <collectionProp name="Arguments.arguments"/>
             </elementProp>
-            <stringProp name="HTTPSampler.domain">qa-khcg-ai.foxconn.com</stringProp>
+            <stringProp name="HTTPSampler.domain">${__P(HOST,REPLACE_ME)}</stringProp>
             <stringProp name="HTTPSampler.port">443</stringProp>
             <stringProp name="HTTPSampler.protocol">https</stringProp>
-            <stringProp name="HTTPSampler.path">/reventmodule/Basic/EVEventMedia?eVEventIds=34123425668794368</stringProp>
+            <stringProp name="HTTPSampler.path">/reventmodule/Basic/EVEventMedia?eVEventIds=${__P(MEDIA_EVENT_ID,REPLACE_ME)}</stringProp>
             <stringProp name="HTTPSampler.method">GET</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -102,14 +102,14 @@
             <stringProp name="HTTPSampler.response_timeout">120000</stringProp>
           </HTTPSamplerProxy>
           <hashTree/>
-          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="封面圖PC版(213KB) ★業主指定" enabled="true">
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="封面圖PC版(約 213 KB) ★需求指定" enabled="true">
             <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
               <collectionProp name="Arguments.arguments"/>
             </elementProp>
-            <stringProp name="HTTPSampler.domain">qa-citygpt.foxconn.com</stringProp>
+            <stringProp name="HTTPSampler.domain">${__P(MEDIA_HOST,REPLACE_ME)}</stringProp>
             <stringProp name="HTTPSampler.port">443</stringProp>
             <stringProp name="HTTPSampler.protocol">https</stringProp>
-            <stringProp name="HTTPSampler.path">/rstorage/Extended/FileResource/34184848690100224</stringProp>
+            <stringProp name="HTTPSampler.path">/rstorage/Extended/FileResource/${__P(BANNER_PC_ID,REPLACE_ME)}</stringProp>
             <stringProp name="HTTPSampler.method">GET</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -123,7 +123,7 @@
               <collectionProp name="HeaderManager.headers">
                 <elementProp name="" elementType="Header">
                   <stringProp name="Header.name">ocp-apim-subscription-key</stringProp>
-                  <stringProp name="Header.value">REPLACE_ME</stringProp>
+                  <stringProp name="Header.value">${__P(APIM_KEY,REPLACE_ME)}</stringProp>
                 </elementProp>
                 <elementProp name="" elementType="Header">
                   <stringProp name="Header.name">x-api-version</stringProp>
@@ -133,14 +133,14 @@
             </HeaderManager>
             <hashTree/>
           </hashTree>
-          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="封面圖行動版(82KB) ★業主指定" enabled="true">
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="封面圖行動版(約 82 KB) ★需求指定" enabled="true">
             <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
               <collectionProp name="Arguments.arguments"/>
             </elementProp>
-            <stringProp name="HTTPSampler.domain">qa-citygpt.foxconn.com</stringProp>
+            <stringProp name="HTTPSampler.domain">${__P(MEDIA_HOST,REPLACE_ME)}</stringProp>
             <stringProp name="HTTPSampler.port">443</stringProp>
             <stringProp name="HTTPSampler.protocol">https</stringProp>
-            <stringProp name="HTTPSampler.path">/rstorage/Extended/FileResource/34184848895096832</stringProp>
+            <stringProp name="HTTPSampler.path">/rstorage/Extended/FileResource/${__P(BANNER_MOBILE_ID,REPLACE_ME)}</stringProp>
             <stringProp name="HTTPSampler.method">GET</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -154,7 +154,7 @@
               <collectionProp name="HeaderManager.headers">
                 <elementProp name="" elementType="Header">
                   <stringProp name="Header.name">ocp-apim-subscription-key</stringProp>
-                  <stringProp name="Header.value">REPLACE_ME</stringProp>
+                  <stringProp name="Header.value">${__P(APIM_KEY,REPLACE_ME)}</stringProp>
                 </elementProp>
                 <elementProp name="" elementType="Header">
                   <stringProp name="Header.name">x-api-version</stringProp>
@@ -174,10 +174,10 @@
             <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
               <collectionProp name="Arguments.arguments"/>
             </elementProp>
-            <stringProp name="HTTPSampler.domain">qa-khcg-ai.foxconn.com</stringProp>
+            <stringProp name="HTTPSampler.domain">${__P(HOST,REPLACE_ME)}</stringProp>
             <stringProp name="HTTPSampler.port">443</stringProp>
             <stringProp name="HTTPSampler.protocol">https</stringProp>
-            <stringProp name="HTTPSampler.path">/reventmodule/Basic/EVFormField?eVEventIds=34185325523320832&amp;category=Registration&amp;pageRows=999</stringProp>
+            <stringProp name="HTTPSampler.path">/reventmodule/Basic/EVFormField?eVEventIds=${__P(EVENT_ID,REPLACE_ME)}&amp;category=Registration&amp;pageRows=999</stringProp>
             <stringProp name="HTTPSampler.method">GET</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -205,12 +205,12 @@
               <collectionProp name="Arguments.arguments">
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                  <stringProp name="Argument.value">{"evEventEntity":{"key":"34185325523320832"},"evRegistrationDatas":[{"evFormFieldEntity":{"key":"34185325526138880"},"value":"1"}],"evEventSessions":[{"key":"${SESSION_ID}"}],"registrationSource":"LoadTest"}</stringProp>
+                  <stringProp name="Argument.value">{"evEventEntity":{"key":"${__P(EVENT_ID,REPLACE_ME)}"},"evRegistrationDatas":[{"evFormFieldEntity":{"key":"${__P(FORM_FIELD_ID,REPLACE_ME)}"},"value":"1"}],"evEventSessions":[{"key":"${SESSION_ID}"}],"registrationSource":"LoadTest"}</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
               </collectionProp>
             </elementProp>
-            <stringProp name="HTTPSampler.domain">qa-khcg-ai.foxconn.com</stringProp>
+            <stringProp name="HTTPSampler.domain">${__P(HOST,REPLACE_ME)}</stringProp>
             <stringProp name="HTTPSampler.port">443</stringProp>
             <stringProp name="HTTPSampler.protocol">https</stringProp>
             <stringProp name="HTTPSampler.path">/reventmodule/Entity/EVRegistration</stringProp>

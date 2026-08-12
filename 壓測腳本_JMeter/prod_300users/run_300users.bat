@@ -2,6 +2,8 @@
 cd /d %~dp0
 set SHARE=%~dp0..\shared
 set REPORTS=%~dp0..\reports
+rem 載入共用設定
+call "%SHARE%\settings.bat"
 echo ============================================================
 echo  STRESS TEST: 300 users / 10 min (ramp-up 4 min)
 echo  NOTE: 300 = 2x the business model (150). Ceiling-finding run.
@@ -21,7 +23,7 @@ python "%SHARE%\ensure_limit.py"
 for /f %%i in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set TS=%%i
 set OUTDIR=%REPORTS%\run300_%TS%
 mkdir "%OUTDIR%" 2>nul
-call "C:\Tools\apache-jmeter-5.6.3\bin\jmeter.bat" -n -t "%SHARE%\loadtest_150.jmx" -JTHREADS=300 -JRAMP=240 -JDURATION=600 -l "%OUTDIR%\result.jtl" -j "%OUTDIR%\jmeter.log" -e -o "%OUTDIR%\report"
+call "%JMETER_BIN%" -n -t "%SHARE%\loadtest_150.jmx" %JPROPS% -JTHREADS=300 -JRAMP=240 -JDURATION=600 -l "%OUTDIR%\result.jtl" -j "%OUTDIR%\jmeter.log" -e -o "%OUTDIR%\report"
 echo.
 echo ============================================================
 echo  DONE. Output: %OUTDIR%

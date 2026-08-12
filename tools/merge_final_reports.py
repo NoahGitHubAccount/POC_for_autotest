@@ -7,7 +7,7 @@
     python tools/merge_final_reports.py --review   # 只產 review 待審彙整
 
 輸出：
-    reports/final/整合測試總報告.md    ← 已審定版（業主交付版）
+    reports/final/整合測試總報告.md    ← 已審定版（對外交付版）
     reports/review/待審彙整報告.md     ← 待審匯集（供使用者審查，未定版）
 Word 交付：產出後用 tools/md_to_docx.py 轉檔（截圖一併嵌入）。
 """
@@ -295,7 +295,8 @@ def _build_final_grouped(out_path: Path) -> bool:
             out.append(f"- 審查狀態：{r['_tag']}")
 
     # 三、問題單全文對照（收錄現行問題單 TSV → 表格，保證問題單每一條都在總報告）
-    issue_file = PROJECT_ROOT / "整合測試_問題單.md"
+    # 問題單為選用檔：專案自行在 repo 根目錄放一份 問題單.md（內含 ```tsv 區塊），沒有就跳過本章節。
+    issue_file = PROJECT_ROOT / "問題單.md"
     if issue_file.exists():
         itext = issue_file.read_text(encoding="utf-8")
         out += ["", "## 三、問題單（現行全文對照）", "",

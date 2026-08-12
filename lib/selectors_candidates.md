@@ -1,7 +1,7 @@
 ---
 audit_date: 2026-05-05
 target: 2-2-2-B 活動列表頁篩選 selector
-source: src/sc_event_frontend/sc_event_frontend/src/
+source: src/（受測前端原始碼鏡像，read-only）
 status: 待你審核 → OK 後我改 lib/selectors.py
 ---
 

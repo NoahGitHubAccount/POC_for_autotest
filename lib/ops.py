@@ -14,6 +14,7 @@ DOM 事實對照表：docs/dom_facts/EVEventEdit.md、docs/dom_facts/EventList.m
 from __future__ import annotations
 
 import json
+import os
 import re
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -310,7 +311,7 @@ def read_field(page: Page, field_id: str) -> str:
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# 生命週期狀態活動製造（驗證日期：2026-07-11 IT-08 首跑；造法見 整合測試_前置準備.md）
+# 生命週期狀態活動製造（複製既有活動 → 調整時間窗 → 得到指定 stage 的測試資料）
 # ════════════════════════════════════════════════════════════════════════════
 
 # 頁面 context 內打任意 API（帶 token），與 _PATCH_EVENT_JS 同線路事實
@@ -329,7 +330,10 @@ _API_CALL_JS = """async ({method, url, body}) => {
     return {ok: r.ok, status: r.status, body: JSON.stringify(data)};
 }"""
 
-_STAGE_SOURCE_NAME = "大港閱冰"  # 複製來源：「2026大港閱冰冰品嘉年華」pkid=34155861376110592（保留勿刪）
+# 複製來源活動的「名稱片段」（find_event_pkid 以子字串比對）。
+# 請填受測站上一筆資料完整、可長期保留的活動；或設環境變數 AUTOTEST_STAGE_SOURCE_NAME 覆蓋，
+# 避免把真實活動名稱寫進版控。
+_STAGE_SOURCE_NAME = os.environ.get("AUTOTEST_STAGE_SOURCE_NAME", "REPLACE_ME")
 
 # 各 stage 相對時間窗（start, end, regOpenFrom；後端 GetFieldEditRules 依時間優先序判定）
 _STAGE_WINDOWS = {
@@ -401,7 +405,7 @@ def set_registration_open(page: Page, pkid: str, reg_dt: datetime) -> None:
 
 def make_stage_event(page: Page, base_url: str, stage: str, name_prefix: str = "STAGE",
                      keep_source_times: bool = False) -> str:
-    """複製大港閱冰並調成指定生命週期 stage（pre_open/registration_open/in_progress/ended），
+    """複製來源活動（`_STAGE_SOURCE_NAME`）並調成指定生命週期 stage（pre_open/registration_open/in_progress/ended），
     回傳新活動 pkid（已啟用）。disabled 直接用 create_draft() 即可，不走此函式。
 
     keep_source_times=True：不 PATCH 活動時間窗（保留來源活動自洽的場次/報到/曝光時間，

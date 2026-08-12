@@ -1,18 +1,27 @@
 # -*- coding: utf-8 -*-
-"""刪除 A 桶（自動化測試產物）活動。使用者核准後執行。
-雙重保險：只刪「蘇哲正(自動化帳號)建 + A桶命名特徵」；KEEP 三筆與其他帳號絕不刪。
-結果寫入 tools/delete_result.txt。"""
+"""清除 A 桶（自動化測試產物）活動。使用者核准後執行。
+
+雙重保險：只刪「自動化帳號建立 + 符合 A 桶命名特徵」的活動；
+KEEP 名單與其他帳號建立的活動絕不刪。結果寫入 tools/delete_result.txt。
+
+使用前必填（跨專案重用時逐項替換）：
+  - AUTO_ACCT     ：自動化測試帳號在系統上顯示的建立者名稱
+  - KEEP          ：無論如何都不可刪除的活動 pkid（例如生命週期測試的複製來源）
+  - KNOWN_DELETE  ：已人工確認可刪的活動 pkid（選填，留空集合即可）
+base_url 由 config/config.<env>.yaml 讀取，不寫死 host。
+"""
 import sys, io, os, re
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 from playwright.sync_api import sync_playwright
 from lib import ops
 from lib.auth import storage_path, load_session_storage_init_script
+from lib.config_loader import load_config
 
-BASE = "https://qa-khcg-ai.foxconn.com"
-KEEP = {"34185325523320832", "34155861376110592", "34168368758263808"}
-AUTO_ACCT = "蘇哲正"
-KNOWN_DELETE = {"34174300370589696", "34174303839862784", "34185353624633344", "34185347837804544"}
+BASE = load_config()["base_url"]
+KEEP = {"REPLACE_ME"}
+AUTO_ACCT = "REPLACE_ME"
+KNOWN_DELETE = set()
 AUTO_NAME = [r"^IT0?\d", r"^PROBE_", r"_copy$", r"^LoadTest_", r"^AItest_"]
 LOG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "delete_result.txt")
 

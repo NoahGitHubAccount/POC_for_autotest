@@ -11,7 +11,7 @@
 #   - local 模式：只讀 config.local.yaml
 #   - 非 local 模式（dev/test/prod）：只讀 config.<env>.yaml，互不影響
 
-base_url: https://<受測站 host>   # 例：https://qa-khcg-ai.foxconn.com
+base_url: https://<受測站 host>   # 受測站主機名稱；填入實際位址後不入版控
 entry_path: /entry/login
 
 # 直連活動編輯頁用的 pkid（任一有效活動即可，用於 EVEventEdit 相關測試）

@@ -1,6 +1,6 @@
 # POC_for_autotest
 
-> 黑箱自動化測試 POC for 某活動報名管理系統（多環境：`config/config.<env>.yaml`；env 預設 local）
+> 黑箱自動化測試 POC 工具包，適用於任一受測 Web 系統（多環境：`config/config.<env>.yaml`；env 預設 local）
 
 ## 技術棧
 - **測試**：Python 3.x + Playwright + pytest
@@ -16,7 +16,7 @@
    2. **寫 selector**：依步驟 0/1 的證據寫，依第 3 條策略下手。
    3. **pytest 跑**：紅綠是審查機制；**禁止對 live DOM 試錯猜 selector**（4-30 token 教訓：盲試 = 燒額度）。
    4. **紅了二修**：用 `tools/dom_probe.py`（宣告式 steps）對真實 DOM 確認，或使用者 dump 一頁 HTML；最多 3 輪。**禁止寫一次性 `_diag_*.py`**；探勘結論回填 `docs/dom_facts/`。
-   黑箱原則：測試不引入前端內部型別，`src/sc_event_frontend/` 僅 read-only 參考。
+   黑箱原則：測試不引入前端內部型別，`src/`（受測前端原始碼鏡像）僅 read-only 參考。
 2. **不掃 node_modules、不讀 package-lock.json**（637KB）。
 3. **selector 策略**：優先 `get_by_role` / `get_by_label` / `get_by_text`；不使用 DevTools「複製 selector」的動態 ID（Vue UUID、`pv_id_*`）；不使用 Tailwind utility class。**DOM 是唯一事實**，文字 selector 不從 i18n 推斷。
 4. **不 commit secrets**（`config/config.local.yaml`、`config/config.*.yaml`、`.auth/`、`credentials.json`）。多環境設定檔（`.dev`/`.test`/`.prod`）全部 gitignored；只有 `config.example.yaml` 入版控。
@@ -27,9 +27,9 @@
    - 若 `tests/` 或 `specs/` 有新增或修改 → **明確提醒使用者執行 sync**：
      ```
      .\scripts\sync_to_company.ps1
-     # 然後到 aiautotest 執行 git add / commit / push
+     # 然後到公司版控 repo（<company-repo>）執行 git add / commit / push
      ```
-8. **不過度建構**：不主動擴充工項、不新增 P8+ 階段、不引入新依賴 / 新工具 / 新 hook，**除非使用者明示授權**。範圍排除（如 2-2-2-A 權限工項）一律以 `memory/poc_autotest_decisions.md` 為準。
+8. **不過度建構**：不主動擴充工項、不新增 P8+ 階段、不引入新依賴 / 新工具 / 新 hook，**除非使用者明示授權**。工項範圍排除以使用者當次專案的決策紀錄為準。
 
 ## 子文件地圖
 
@@ -65,4 +65,4 @@
 - Windows 11 + PowerShell（中文輸出需 `$env:PYTHONUTF8=1`）
 - Playwright 1.48 不抓 sessionStorage，本專案用 `add_init_script` 還原（見 `prompts/99_重點經驗.md`）
 - 多環境切替：`$env:TEST_ENV = "test"` 或 pytest `--env test`；設定檔 `config/config.<env>.yaml`（均 gitignored）
-- QA 環境（TEST）：`https://qa-khcg-ai.foxconn.com/entry/login`
+- 受測站位址一律從 `config/config.<env>.yaml` 的 `base_url` + `entry_path` 組出，**不在文件或程式碼裡寫死 host**

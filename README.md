@@ -2,7 +2,7 @@
 
 > **一句話定位**：用 AI 協作把「PDF 規格」自動轉成「pytest 測試 + Word 報告」的工程化骨架。
 > **適用方法**：可複製到任何「有 PDF/Word 規格 + Web UI」的專案。
-> **受測對象**：某活動報名管理系統（具體 host 在本機 `config/config.local.yaml`，不入 git）。
+> **受測對象**：任一受測 Web 系統（具體 host 填在本機 `config/config.local.yaml`，不入 git）。
 
 ---
 

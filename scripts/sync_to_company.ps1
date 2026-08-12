@@ -1,21 +1,25 @@
 ﻿# sync_to_company.ps1
 #
 # 職責劃分：
-#   個人版控 (POC_for_autotest)  — 測試框架 + 工程經驗
-#   公司版控 (aiautotest)        — 框架 + 專案產出 (tests/ specs/ input/ notes/ plan.md)
+#   個人版控 (本 repo)      — 測試框架 + 工程經驗
+#   公司版控 (<company-repo>) — 框架 + 專案產出 (tests/ specs/ input/ notes/ plan.md)
 #
 # 本腳本做兩件事：
 #   1. 把個人版控 git 追蹤的框架檔案複製到公司 repo
 #   2. 把未進個人版控的專案目錄直接複製到公司 repo
 #
+# 公司 repo 路徑取得順序：-TargetDir 參數 > 環境變數 AUTOTEST_COMPANY_REPO > 預設 ..\company-repo
+#
 # 使用方式：
 #   乾跑預覽     .\scripts\sync_to_company.ps1 -WhatIf
 #   正式同步     .\scripts\sync_to_company.ps1
+#   指定目的地   .\scripts\sync_to_company.ps1 -TargetDir D:\repos\<company-repo>
 #   含刪除同步   .\scripts\sync_to_company.ps1 -SyncDeletes
 [CmdletBinding(SupportsShouldProcess)]
 param(
     [string]$SourceDir = (Split-Path $PSScriptRoot -Parent),
-    [string]$TargetDir = (Join-Path (Split-Path $PSScriptRoot -Parent) "..\aiautotest"),
+    [string]$TargetDir = $(if ($env:AUTOTEST_COMPANY_REPO) { $env:AUTOTEST_COMPANY_REPO }
+                          else { Join-Path (Split-Path $PSScriptRoot -Parent) "..\company-repo" }),
     [switch]$SyncDeletes
 )
 
